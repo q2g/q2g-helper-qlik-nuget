@@ -29,32 +29,30 @@ namespace Ser.Connections
     using ImpromptuInterface;
     #endregion
 
+    #region Enumeration
+    public enum QlikAppMode
+    {
+        DESKTOP,
+        SERVER
+    }
+    #endregion
+
     public class QlikConnection
     {
         #region Logger
         private static Logger logger = LogManager.GetCurrentClassLogger();
         #endregion
 
-        #region Enumeration
-        public enum QlikAppMode
-        {
-            DESKTOP,
-            SERVER
-        }
-        #endregion
-
         #region Properties & Variables
         public Uri ConnectUri { get; private set; }
         public SerConnection Config { get; private set; }
         public Cookie ConnectCookie { get; private set; }
-        public QlikSelections Selections { get; private set; }
         public IDoc CurrentApp { get; private set; }
         public QlikAppMode Mode { get; private set; }
         public bool IsFree { get; set; } = false;
         public string Identity { get; set; } = null;
         public string ConnId { get; set; } = Guid.NewGuid().ToString();
         private bool IsSharedSession { get; set; }
-        private Uri QrsConnectUrl = null;
         private Session SocketSession = null;
         private readonly object lockObject = new object();
         #endregion
@@ -85,7 +83,6 @@ namespace Ser.Connections
             }
 
             ConnectUri = new Uri(connectUrl);
-            QrsConnectUrl = BuildQrsUri(ConnectUri, Config.ServerUri);
             logger.Info($"Create Qlik connection {ConnId} to {connectUrl} with app {Config.App} and identity {identity}.");
         }
         #endregion
@@ -96,41 +93,6 @@ namespace Ser.Connections
             value = value.Replace("http://", "ws://");
             value = value.Replace("https://", "wss://");
             return value.TrimEnd('/');
-        }
-
-        private static Uri BuildQrsUri(Uri connectUrl, Uri baseUrl)
-        {
-            var virtualProxy = baseUrl?.PathAndQuery?.Split(new char[] { '/' },
-                           StringSplitOptions.RemoveEmptyEntries)?.FirstOrDefault() ?? null;
-            virtualProxy = $"/{virtualProxy}";
-
-            var qrsBuilder = new UriBuilder()
-            {
-                Host = connectUrl.Host,
-                Path = virtualProxy
-            };
-            switch (connectUrl.Scheme)
-            {
-                case "ws":
-                    qrsBuilder.Scheme = "http";
-                    qrsBuilder.Port = connectUrl.Port;
-                    break;
-                case "wss":
-                    qrsBuilder.Scheme = "https";
-                    qrsBuilder.Port = connectUrl.Port;
-                    break;
-                default:
-                    qrsBuilder.Scheme = "https";
-                    break;
-            }
-            return qrsBuilder.Uri;
-        }
-
-        private List<string> GetLefs(List<string> Lefs)
-        {
-            var results = new List<string>();
-            results.AddRange(Lefs ?? new List<string>());
-            return results.Where(v => v != null).ToList();
         }
 
         private string GetAppId(IGlobal global)
@@ -153,7 +115,8 @@ namespace Ser.Connections
             {
                 if (ConnectCookie != null)
                     return ConnectCookie;
-                var newUri = new UriBuilder(QrsConnectUrl);
+                var qlikCookieConnection = BuildQrsUri(ConnectUri, Config.ServerUri);
+                var newUri = new UriBuilder(qlikCookieConnection);
                 newUri.Path += "/sense/app";
                 var connectUri = newUri.Uri;
                 logger.Debug($"Http ConnectUri: {connectUri}");
@@ -194,60 +157,37 @@ namespace Ser.Connections
                 return null;
             }
         }
-
-        private string GetLicenseText(string relUrl)
-        {
-            try
-            {
-                if (String.IsNullOrEmpty(relUrl))
-                    return null;
-
-                var baseAddress = new Uri(QrsConnectUrl.AbsoluteUri);
-                var cookieContainer = new CookieContainer();
-                var handler = new HttpClientHandler() { CookieContainer = cookieContainer };
-                var client = new HttpClient(handler) { BaseAddress = baseAddress };
-                if (ConnectCookie != null)
-                    cookieContainer.Add(baseAddress, ConnectCookie);
-                var fullUrl = $"{QrsConnectUrl.AbsoluteUri.TrimEnd('/')}{relUrl}";
-                var response = client.GetAsync(fullUrl).Result;
-                if (response.StatusCode == HttpStatusCode.OK)
-                {
-                    var content = response.Content.ReadAsStringAsync().Result;
-                    return content;
-                }
-                return null;
-            }
-            catch (Exception ex)
-            {
-                logger.Error(ex, "The license http request failed.");
-                return null;
-            }
-        }
-
-        private bool CheckTrialPeriod()
-        {
-            try
-            {
-                var commitDate = DateTime.Parse(GitVersionInformation.CommitDate);
-                var span = commitDate.AddDays(30);
-                var now = DateTime.Today;
-                if (now.Ticks > span.Ticks)
-                {
-                    logger.Warn("Your trial period of 30 days has expired.");
-                    return false;
-                }
-                var endOfTrial = span - now;
-                logger.Warn($"You have {endOfTrial.TotalDays} days until the end of the trial period.");
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
         #endregion
 
         #region Public Methods
+        public static Uri BuildQrsUri(Uri connectUrl, Uri baseUrl)
+        {
+            var virtualProxy = baseUrl?.PathAndQuery?.Split(new char[] { '/' },
+                           StringSplitOptions.RemoveEmptyEntries)?.FirstOrDefault() ?? null;
+            virtualProxy = $"/{virtualProxy}";
+
+            var qrsBuilder = new UriBuilder()
+            {
+                Host = connectUrl.Host,
+                Path = virtualProxy
+            };
+            switch (connectUrl.Scheme)
+            {
+                case "ws":
+                    qrsBuilder.Scheme = "http";
+                    qrsBuilder.Port = connectUrl.Port;
+                    break;
+                case "wss":
+                    qrsBuilder.Scheme = "https";
+                    qrsBuilder.Port = connectUrl.Port;
+                    break;
+                default:
+                    qrsBuilder.Scheme = "https";
+                    break;
+            }
+            return qrsBuilder.Uri;
+        }
+
         public bool Connect()
         {
             try
@@ -359,7 +299,6 @@ namespace Ser.Connections
                     CurrentApp = global.OpenDocAsync(appName).Result;
                 }
                 logger.Debug("The Connection to Qlik was successfully");
-                Selections = new QlikSelections(CurrentApp);
                 return true;
             }
             catch (Exception ex)
