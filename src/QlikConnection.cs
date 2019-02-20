@@ -126,13 +126,6 @@ namespace Ser.Connections
             return qrsBuilder.Uri;
         }
 
-        private List<string> GetLefs(List<string> Lefs)
-        {
-            var results = new List<string>();
-            results.AddRange(Lefs ?? new List<string>());
-            return results.Where(v => v != null).ToList();
-        }
-
         private string GetAppId(IGlobal global)
         {
             if (Guid.TryParse(Config.App, out var result))
@@ -192,57 +185,6 @@ namespace Ser.Connections
             {
                 logger.Error(ex, "Can´t create a qlik session cookie.");
                 return null;
-            }
-        }
-
-        private string GetLicenseText(string relUrl)
-        {
-            try
-            {
-                if (String.IsNullOrEmpty(relUrl))
-                    return null;
-
-                var baseAddress = new Uri(QrsConnectUrl.AbsoluteUri);
-                var cookieContainer = new CookieContainer();
-                var handler = new HttpClientHandler() { CookieContainer = cookieContainer };
-                var client = new HttpClient(handler) { BaseAddress = baseAddress };
-                if (ConnectCookie != null)
-                    cookieContainer.Add(baseAddress, ConnectCookie);
-                var fullUrl = $"{QrsConnectUrl.AbsoluteUri.TrimEnd('/')}{relUrl}";
-                var response = client.GetAsync(fullUrl).Result;
-                if (response.StatusCode == HttpStatusCode.OK)
-                {
-                    var content = response.Content.ReadAsStringAsync().Result;
-                    return content;
-                }
-                return null;
-            }
-            catch (Exception ex)
-            {
-                logger.Error(ex, "The license http request failed.");
-                return null;
-            }
-        }
-
-        private bool CheckTrialPeriod()
-        {
-            try
-            {
-                var commitDate = DateTime.Parse(GitVersionInformation.CommitDate);
-                var span = commitDate.AddDays(30);
-                var now = DateTime.Today;
-                if (now.Ticks > span.Ticks)
-                {
-                    logger.Warn("Your trial period of 30 days has expired.");
-                    return false;
-                }
-                var endOfTrial = span - now;
-                logger.Warn($"You have {endOfTrial.TotalDays} days until the end of the trial period.");
-                return true;
-            }
-            catch
-            {
-                return false;
             }
         }
         #endregion
