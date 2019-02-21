@@ -33,6 +33,7 @@ namespace Ser.Connections
         public static ConcurrentBag<QlikConnection> Connections = new ConcurrentBag<QlikConnection>();
         private static readonly object threadObject = new object();
         private static int emergencyConnectionCount = 0;
+        private static bool canConnect = true;
         #endregion
 
         #region Private Methods
@@ -40,7 +41,8 @@ namespace Ser.Connections
         {
             try
             {
-                foreach (var conn in Connections)
+                var connections = Connections.ToArray();
+                foreach (var conn in connections)
                 {
                     if (conn.IsFree == true)
                     {
@@ -73,11 +75,11 @@ namespace Ser.Connections
             }
         }
 
-        private static bool Connect(QlikConnection connection, bool openConnection = true)
+        private static bool Connect(QlikConnection connection)
         {
             try
             {
-                if (!openConnection)
+                if (!canConnect)
                     return false;
 
                 if (connection.Connect())
@@ -86,6 +88,7 @@ namespace Ser.Connections
                     return true;
                 }
 
+                canConnect = false;
                 var config = connection.Config;
                 logger.Error($"The connection could not created - uri {config?.ServerUri?.AbsoluteUri} and app id \"{config?.App}\".");
                 return false;
@@ -176,7 +179,7 @@ namespace Ser.Connections
             }
         }
 
-        public static QlikConnection GetConnection(List<SerConnection> connectionConfigs, bool openConnection = true)
+        public static QlikConnection GetConnection(List<SerConnection> connectionConfigs)
         {
             try
             {
@@ -194,7 +197,7 @@ namespace Ser.Connections
                         if (connectionConfig.Identities == null || connectionConfig.Identities?.Count == 0)
                         {
                             var newConnection = new QlikConnection(null, connectionConfig);
-                            if (Connect(newConnection, openConnection))
+                            if (Connect(newConnection))
                             {
                                 logger.Debug($"Connection count {Connections.Count}.");
                                 return newConnection;
@@ -205,10 +208,10 @@ namespace Ser.Connections
                                 {
                                     logger.Warn("Emergency connection mode - Wait for free connection.");
                                     emergencyConnectionCount++;
-                                    if (emergencyConnectionCount == 50)
+                                    if (emergencyConnectionCount >= 50)
                                         throw new Exception("Emergency connection mode - Timeout reached.");
                                     Thread.Sleep(1000);
-                                    return GetConnection(connectionConfigs, false);
+                                    return GetConnection(connectionConfigs);
                                 }
                             }
                         }
