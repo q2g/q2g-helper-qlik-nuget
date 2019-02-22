@@ -1,4 +1,4 @@
-﻿namespace Ser.ConAai
+﻿namespace Ser.Connections
 {
     #region Usings
     using NLog;
