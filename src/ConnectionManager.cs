@@ -30,7 +30,7 @@ namespace Ser.Connections
         #endregion
 
         #region Variables && Properties
-        public static ConcurrentBag<QlikConnection> Connections = new ConcurrentBag<QlikConnection>();
+        private static ConcurrentBag<QlikConnection> Connections = new ConcurrentBag<QlikConnection>();
         private static readonly object threadObject = new object();
         private static int emergencyConnectionCount = 0;
         private static bool canConnect = true;
