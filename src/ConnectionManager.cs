@@ -146,6 +146,33 @@ namespace Ser.Connections
             return configCopy;
         }
 
+        public static QlikConnection NewConnection(SerConnection connectionConfig)
+        {
+            try
+            {
+                var distinctIdentities = connectionConfig?.Identities?.Distinct()?.ToArray() ?? new string[0];
+                foreach (var identity in distinctIdentities)
+                {
+                    var newConnection = new QlikConnection(identity, connectionConfig);
+                    if (Connect(newConnection))
+                    {
+                        newConnection.IsFree = false;
+                        return newConnection;
+                    }
+                }
+
+                if(connectionConfig.Identities == null || connectionConfig.Identities.Count == 0)
+                    return new QlikConnection(null, connectionConfig);
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex, "No new connection to qlik.");
+                return null;
+            }
+        }
+
         public static int LoadConnections(List<SerConnection> connectionConfigs, int coreCount)
         {
             try
@@ -176,29 +203,6 @@ namespace Ser.Connections
             {
                 logger.Error(ex, "No connections load.");
                 return 1;
-            }
-        }
-
-        public static QlikConnection NewConnection(SerConnection connectionConfig)
-        {
-            try
-            {
-                var distinctIdentities = connectionConfig?.Identities?.Distinct()?.ToArray() ?? new string[0];
-                foreach (var identity in distinctIdentities)
-                {
-                    var newConnection = new QlikConnection(identity, connectionConfig);
-                    if (Connect(newConnection))
-                    {
-                        newConnection.IsFree = false;
-                        return newConnection;
-                    }
-                }
-                return null;
-            }
-            catch (Exception ex)
-            {
-                logger.Error(ex, "No new connection to qlik.");
-                return null;
             }
         }
 
