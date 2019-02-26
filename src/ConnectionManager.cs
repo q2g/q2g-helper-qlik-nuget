@@ -161,9 +161,12 @@ namespace Ser.Connections
                     }
                 }
 
-                if(connectionConfig.Identities == null || connectionConfig.Identities.Count == 0)
-                    return new QlikConnection(null, connectionConfig);
-
+                if (connectionConfig.Identities == null || connectionConfig.Identities.Count == 0)
+                {
+                    var conn = new QlikConnection(null, connectionConfig);
+                    if (conn.Connect())
+                        return conn;
+                }
                 return null;
             }
             catch (Exception ex)
