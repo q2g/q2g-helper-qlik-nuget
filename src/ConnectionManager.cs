@@ -179,6 +179,29 @@ namespace Ser.Connections
             }
         }
 
+        public static QlikConnection NewConnection(SerConnection connectionConfig)
+        {
+            try
+            {
+                var distinctIdentities = connectionConfig?.Identities?.Distinct()?.ToArray() ?? new string[0];
+                foreach (var identity in distinctIdentities)
+                {
+                    var newConnection = new QlikConnection(identity, connectionConfig);
+                    if (Connect(newConnection))
+                    {
+                        newConnection.IsFree = false;
+                        return newConnection;
+                    }
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex, "No new connection to qlik.");
+                return null;
+            }
+        }
+
         public static QlikConnection GetConnection(List<SerConnection> connectionConfigs)
         {
             try
