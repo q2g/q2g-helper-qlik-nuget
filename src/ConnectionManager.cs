@@ -120,6 +120,7 @@ namespace Ser.Connections
                     }
                 }
                 Connections.Clear();
+                canConnect = true;
             }
             catch (Exception ex)
             {
