@@ -181,27 +181,30 @@ namespace Ser.Connections
         {
             try
             {
-                var connCount = 0;
-                foreach (var connectionConfig in connectionConfigs)
+                lock (threadObject)
                 {
-                    var distinctIdentities = connectionConfig?.Identities?.Distinct()?.ToArray() ?? new string[0];
-                    foreach (var identity in distinctIdentities)
+                    var connCount = 0;
+                    foreach (var connectionConfig in connectionConfigs)
                     {
-                        if (Connections.Count < coreCount)
+                        var distinctIdentities = connectionConfig?.Identities?.Distinct()?.ToArray() ?? new string[0];
+                        foreach (var identity in distinctIdentities)
                         {
-                            var newConnection = new QlikConnection(identity, connectionConfig);
-                            if (Connect(newConnection))
+                            if (Connections.Count < coreCount)
                             {
-                                connCount++;
-                                newConnection.IsFree = true;
-                                logger.Debug($"Connection count {Connections.Count} to identity {identity}");
+                                var newConnection = new QlikConnection(identity, connectionConfig);
+                                if (Connect(newConnection))
+                                {
+                                    connCount++;
+                                    newConnection.IsFree = true;
+                                    logger.Debug($"Connection count {Connections.Count} to identity {identity}");
+                                }
                             }
                         }
                     }
+                    if (connCount > 0)
+                        return connCount;
+                    return coreCount;
                 }
-                if (connCount > 0)
-                    return connCount;
-                return coreCount;
             }
             catch (Exception ex)
             {
