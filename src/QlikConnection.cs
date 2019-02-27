@@ -27,6 +27,7 @@ namespace Ser.Connections
     using System.Threading;
     using Qlik.EngineAPI;
     using ImpromptuInterface;
+    using Q2g.HelperPem;
     #endregion
 
     #region Enumeration
@@ -109,7 +110,7 @@ namespace Ser.Connections
             return Config.App;
         }
 
-        private Cookie GetCookie(ConnectionOptions options)
+        private Cookie GetCookie(CookieConnectionOptions options)
         {
             try
             {
@@ -128,7 +129,8 @@ namespace Ser.Connections
                 };
                 if (options.UseCertificate)
                 {
-                    var qlikClientCert = options.GetQlikClientCertificate();
+                    var qlikClientCert = new X509Certificate2();
+                    qlikClientCert = qlikClientCert.GetQlikClientCertificate(options.CertificatePath);
                     handler.ClientCertificates.Add(qlikClientCert);
                 }
                 handler.ServerCertificateCustomValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
@@ -206,13 +208,14 @@ namespace Ser.Connections
                         switch (credType)
                         {
                             case QlikCredentialType.CERTIFICATE:
-                                var options = new ConnectionOptions()
+                                var domainUser = new DomainUser(credentials.Value);
+                                var options = new CookieConnectionOptions()
                                 {
                                     CertificatePath = credentials?.Cert ?? null,
+                                    HeaderName = "X-Qlik-User",
+                                    HeaderValue = $"UserDirectory={domainUser.UserDirectory};UserId={domainUser.UserId}",
                                     UseCertificate = true,
                                 };
-                                var clientCert = options.GetQlikClientCertificate();
-                                var certCollect = new X509Certificate2Collection(clientCert);
                                 ConnectCookie = GetCookie(options);
                                 webSocket.Options.Cookies.Add(ConnectCookie);
                                 logger.Debug($"Credential type: {credentials?.Type}");
@@ -234,7 +237,7 @@ namespace Ser.Connections
                                 break;
                             case QlikCredentialType.JWT:
                                 logger.Debug($"Jwt type: {credentials?.Key} - {credentials?.Value}.");
-                                options = new ConnectionOptions()
+                                options = new CookieConnectionOptions()
                                 {
                                     HeaderName = credentials?.Key,
                                     HeaderValue = credentials?.Value,
@@ -244,7 +247,7 @@ namespace Ser.Connections
                                 break;
                             case QlikCredentialType.HEADER:
                                 logger.Debug($"Header type: {credentials?.Key} - {credentials?.Value}.");
-                                options = new ConnectionOptions()
+                                options = new CookieConnectionOptions()
                                 {
                                     HeaderName = credentials?.Key,
                                     HeaderValue = credentials?.Value,
