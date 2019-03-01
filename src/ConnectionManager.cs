@@ -23,21 +23,21 @@ namespace Ser.Connections
     using System.Collections.Concurrent;
     #endregion
 
-    public static class ConnectionManager
+    public class ConnectionManager
     {
         #region Logger
         private static Logger logger = LogManager.GetCurrentClassLogger();
         #endregion
 
         #region Variables && Properties
-        private static ConcurrentBag<QlikConnection> Connections = new ConcurrentBag<QlikConnection>();
-        private static readonly object threadObject = new object();
-        private static int emergencyConnectionCount = 0;
-        private static bool canConnect = true;
+        private ConcurrentBag<QlikConnection> Connections = new ConcurrentBag<QlikConnection>();
+        private readonly object threadObject = new object();
+        private int emergencyConnectionCount = 0;
+        private bool canConnect = true;
         #endregion
 
         #region Private Methods
-        public static QlikConnection FindConnection(SerConnection config)
+        public QlikConnection FindConnection(SerConnection config)
         {
             try
             {
@@ -75,7 +75,7 @@ namespace Ser.Connections
             }
         }
 
-        private static bool Connect(QlikConnection connection)
+        private bool Connect(QlikConnection connection)
         {
             try
             {
@@ -102,7 +102,7 @@ namespace Ser.Connections
         #endregion
 
         #region Public Methods
-        public static void MakeFree()
+        public void MakeFree()
         {
             try
             {
@@ -128,7 +128,7 @@ namespace Ser.Connections
             }
         }
 
-        public static SerConnection GetConnConfig(SerConnection config, string serverUri = null, string appName = null)
+        public SerConnection GetConnConfig(SerConnection config, string serverUri = null, string appName = null)
         {
             var jsonSerConfig = JsonConvert.SerializeObject(config);
             var configCopy = JsonConvert.DeserializeObject<SerConnection>(jsonSerConfig);
@@ -155,7 +155,7 @@ namespace Ser.Connections
                 foreach (var identity in distinctIdentities)
                 {
                     var newConnection = new QlikConnection(identity, connectionConfig);
-                    if (Connect(newConnection))
+                    if (newConnection.Connect())
                     {
                         newConnection.IsFree = false;
                         return newConnection;
@@ -177,7 +177,7 @@ namespace Ser.Connections
             }
         }
 
-        public static int LoadConnections(List<SerConnection> connectionConfigs, int coreCount)
+        public int LoadConnections(List<SerConnection> connectionConfigs, int coreCount)
         {
             try
             {
@@ -213,7 +213,7 @@ namespace Ser.Connections
             }
         }
 
-        public static QlikConnection GetConnection(List<SerConnection> connectionConfigs)
+        public QlikConnection GetConnection(List<SerConnection> connectionConfigs)
         {
             try
             {
