@@ -7,7 +7,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
  */
 #endregion
 
-namespace Ser.Connections
+namespace Q2g.HelperQlik
 {
     #region Usings
     using System;
@@ -27,7 +27,6 @@ namespace Ser.Connections
     using System.Threading;
     using Qlik.EngineAPI;
     using ImpromptuInterface;
-    using Q2g.HelperPem;
     #endregion
 
     #region Enumeration
@@ -110,7 +109,7 @@ namespace Ser.Connections
             return Config.App;
         }
 
-        private Cookie GetCookie(CookieConnectionOptions options)
+        private Cookie GetCookie(ConnectionOptions options)
         {
             try
             {
@@ -122,22 +121,38 @@ namespace Ser.Connections
                 var connectUri = newUri.Uri;
                 logger.Debug($"Http ConnectUri: {connectUri}");
                 var cookieContainer = new CookieContainer();
+
+                X509Certificate2 qlikClientCert = null;
+                if (options.UseCertificate)
+                    qlikClientCert = options.GetQlikClientCertificate();
+
+#if NET452 || NET462
+                var webHandler = new WebRequestHandler
+                {
+                    UseDefaultCredentials = true,
+                    CookieContainer = cookieContainer,
+                };
+                if (qlikClientCert != null)
+                    webHandler.ClientCertificates.Add(qlikClientCert);
+
+                var callback = ServicePointManager.ServerCertificateValidationCallback;
+                if (callback == null)
+                    throw new NotImplementedException(".NET has no certificate check");
+                var connection = new HttpClient(webHandler);
+#else
                 var handler = new HttpClientHandler
                 {
                     UseDefaultCredentials = true,
                     CookieContainer = cookieContainer,
                 };
-                if (options.UseCertificate)
-                {
-                    var qlikClientCert = new X509Certificate2();
-                    qlikClientCert = qlikClientCert.GetQlikClientCertificate(options.CertificatePath);
+                if (qlikClientCert != null)
                     handler.ClientCertificates.Add(qlikClientCert);
-                }
                 handler.ServerCertificateCustomValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
                 {
                     return true;
                 };
                 var connection = new HttpClient(handler);
+#endif
                 if (!String.IsNullOrEmpty(options.HeaderName))
                     connection.DefaultRequestHeaders.Add(options.HeaderName, options.HeaderValue);
                 var message = connection.GetAsync(connectUri).Result;
@@ -202,20 +217,29 @@ namespace Ser.Connections
                     {
                         var webSocket = new ClientWebSocket();
                         webSocket.Options.Cookies = new CookieContainer();
+#if NET452
+                        var callback = ServicePointManager.ServerCertificateValidationCallback;
+                        if (callback == null)
+                        throw new NotImplementedException(".NET has no certificate check");
+#elif NET462
+                        var callback = ServicePointManager.ServerCertificateValidationCallback;
+                        if (callback == null)
+                        throw new NotImplementedException(".NET has no certificate check");
+#else
                         webSocket.Options.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
+#endif
                         var credentials = Config?.Credentials ?? null;
                         var credType = Config?.Credentials?.Type ?? QlikCredentialType.NONE;
                         switch (credType)
                         {
                             case QlikCredentialType.CERTIFICATE:
-                                var domainUser = new DomainUser(credentials.Value);
-                                var options = new CookieConnectionOptions()
+                                var options = new ConnectionOptions()
                                 {
                                     CertificatePath = credentials?.Cert ?? null,
-                                    HeaderName = "X-Qlik-User",
-                                    HeaderValue = $"UserDirectory={domainUser.UserDirectory};UserId={domainUser.UserId}",
                                     UseCertificate = true,
                                 };
+                                var clientCert = options.GetQlikClientCertificate();
+                                var certCollect = new X509Certificate2Collection(clientCert);
                                 ConnectCookie = GetCookie(options);
                                 webSocket.Options.Cookies.Add(ConnectCookie);
                                 logger.Debug($"Credential type: {credentials?.Type}");
@@ -237,7 +261,7 @@ namespace Ser.Connections
                                 break;
                             case QlikCredentialType.JWT:
                                 logger.Debug($"Jwt type: {credentials?.Key} - {credentials?.Value}.");
-                                options = new CookieConnectionOptions()
+                                options = new ConnectionOptions()
                                 {
                                     HeaderName = credentials?.Key,
                                     HeaderValue = credentials?.Value,
@@ -247,7 +271,7 @@ namespace Ser.Connections
                                 break;
                             case QlikCredentialType.HEADER:
                                 logger.Debug($"Header type: {credentials?.Key} - {credentials?.Value}.");
-                                options = new CookieConnectionOptions()
+                                options = new ConnectionOptions()
                                 {
                                     HeaderName = credentials?.Key,
                                     HeaderValue = credentials?.Value,
@@ -274,7 +298,7 @@ namespace Ser.Connections
                 IGlobal global = Impromptu.ActLike<IGlobal>(globalTask.Result);
                 var task = global.IsDesktopModeAsync();
                 task.Wait(2500);
-                if (!task.IsCompletedSuccessfully)
+                if (!task.IsCompleted)
                     throw new Exception("No connection to qlik.");
                 if (task.Result)
                     Mode = QlikAppMode.DESKTOP;

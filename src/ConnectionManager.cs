@@ -7,7 +7,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
  */
 #endregion
 
-namespace Ser.Connections
+namespace Q2g.HelperQlik
 {
     #region Usings
     using System;
@@ -23,33 +23,32 @@ namespace Ser.Connections
     using System.Collections.Concurrent;
     #endregion
 
-    public class ConnectionManager
+    public static class ConnectionManager
     {
         #region Logger
         private static Logger logger = LogManager.GetCurrentClassLogger();
         #endregion
 
         #region Variables && Properties
-        private ConcurrentBag<QlikConnection> Connections = new ConcurrentBag<QlikConnection>();
-        private readonly object threadObject = new object();
-        private int emergencyConnectionCount = 0;
-        private bool canConnect = true;
+        public static ConcurrentDictionary<string, QlikConnection> Connections = new ConcurrentDictionary<string, QlikConnection>();
+        private static readonly object threadObject = new object();
+        private static int emergencyConnectionCount = 0;
         #endregion
 
         #region Private Methods
-        public QlikConnection FindConnection(SerConnection config)
+        public static QlikConnection FindConnection(SerConnection config)
         {
             try
             {
-                var connections = Connections.ToArray();
-                foreach (var conn in connections)
+                var values = Connections.Values.ToArray();
+                foreach (var conn in values)
                 {
                     if (conn.IsFree == true)
                     {
                         logger.Trace("The connection is checked for reuse.");
                         logger.Trace($"App \"{conn?.Config?.App}={config?.App}\"");
                         logger.Trace($"Uri: \"{conn?.Config?.ServerUri?.AbsoluteUri}={config?.ServerUri?.AbsoluteUri}\"");
-                        logger.Trace($"Identity: \"{conn?.Identity}={String.Join(',', config?.Identities ?? new List<string>())}\"");
+                        logger.Trace($"Identity: \"{conn?.Identity}={String.Join(",", config?.Identities ?? new List<string>())}\"");
                         if (conn.Config.App == config.App && conn.Config.ServerUri.AbsoluteUri == config.ServerUri.AbsoluteUri)
                         {
                             if (config.Identities == null && conn.Identity == null)
@@ -75,20 +74,19 @@ namespace Ser.Connections
             }
         }
 
-        private bool Connect(QlikConnection connection)
+        private static bool Connect(QlikConnection connection, bool openConnection = true)
         {
             try
             {
-                if (!canConnect)
+                if (!openConnection)
                     return false;
 
                 if (connection.Connect())
                 {
-                    Connections.Add(connection);
+                    Connections.TryAdd(connection.ConnId, connection);
                     return true;
                 }
 
-                canConnect = false;
                 var config = connection.Config;
                 logger.Error($"The connection could not created - uri {config?.ServerUri?.AbsoluteUri} and app id \"{config?.App}\".");
                 return false;
@@ -102,12 +100,12 @@ namespace Ser.Connections
         #endregion
 
         #region Public Methods
-        public void MakeFree()
+        public static void MakeFree()
         {
             try
             {
                 logger.Debug("Make connections free.");
-                var activeConnections = Connections.ToArray();
+                var activeConnections = Connections.Values.ToArray();
                 foreach (var connection in activeConnections)
                 {
                     try
@@ -120,7 +118,6 @@ namespace Ser.Connections
                     }
                 }
                 Connections.Clear();
-                canConnect = true;
             }
             catch (Exception ex)
             {
@@ -128,7 +125,7 @@ namespace Ser.Connections
             }
         }
 
-        public SerConnection GetConnConfig(SerConnection config, string serverUri = null, string appName = null)
+        public static SerConnection GetConnConfig(SerConnection config, string serverUri = null, string appName = null)
         {
             var jsonSerConfig = JsonConvert.SerializeObject(config);
             var configCopy = JsonConvert.DeserializeObject<SerConnection>(jsonSerConfig);
@@ -147,64 +144,31 @@ namespace Ser.Connections
             return configCopy;
         }
 
-        public static QlikConnection NewConnection(SerConnection connectionConfig)
+        public static int LoadConnections(List<SerConnection> connectionConfigs, int coreCount)
         {
             try
             {
-                var distinctIdentities = connectionConfig?.Identities?.Distinct()?.ToArray() ?? new string[0];
-                foreach (var identity in distinctIdentities)
+                var connCount = 0;
+                foreach (var connectionConfig in connectionConfigs)
                 {
-                    var newConnection = new QlikConnection(identity, connectionConfig);
-                    if (newConnection.Connect())
+                    var distinctIdentities = connectionConfig?.Identities?.Distinct()?.ToArray() ?? new string[0];
+                    foreach (var identity in distinctIdentities)
                     {
-                        newConnection.IsFree = false;
-                        return newConnection;
-                    }
-                }
-
-                if (connectionConfig.Identities == null || connectionConfig.Identities.Count == 0)
-                {
-                    var conn = new QlikConnection(null, connectionConfig);
-                    if (conn.Connect())
-                        return conn;
-                }
-                return null;
-            }
-            catch (Exception ex)
-            {
-                logger.Error(ex, "No new connection to qlik.");
-                return null;
-            }
-        }
-
-        public int LoadConnections(List<SerConnection> connectionConfigs, int coreCount)
-        {
-            try
-            {
-                lock (threadObject)
-                {
-                    var connCount = 0;
-                    foreach (var connectionConfig in connectionConfigs)
-                    {
-                        var distinctIdentities = connectionConfig?.Identities?.Distinct()?.ToArray() ?? new string[0];
-                        foreach (var identity in distinctIdentities)
+                        if (Connections.Count < coreCount)
                         {
-                            if (Connections.Count < coreCount)
+                            var newConnection = new QlikConnection(identity, connectionConfig);
+                            if (Connect(newConnection))
                             {
-                                var newConnection = new QlikConnection(identity, connectionConfig);
-                                if (Connect(newConnection))
-                                {
-                                    connCount++;
-                                    newConnection.IsFree = true;
-                                    logger.Debug($"Connection count {Connections.Count} to identity {identity}");
-                                }
+                                connCount++;
+                                newConnection.IsFree = true;
+                                logger.Debug($"Connection count {Connections.Count} to identity {identity}");
                             }
                         }
                     }
-                    if (connCount > 0)
-                        return connCount;
-                    return coreCount;
                 }
+                if (connCount > 0)
+                    return connCount;
+                return coreCount;
             }
             catch (Exception ex)
             {
@@ -213,7 +177,7 @@ namespace Ser.Connections
             }
         }
 
-        public QlikConnection GetConnection(List<SerConnection> connectionConfigs)
+        public static QlikConnection GetConnection(List<SerConnection> connectionConfigs, bool openConnection = true)
         {
             try
             {
@@ -231,7 +195,7 @@ namespace Ser.Connections
                         if (connectionConfig.Identities == null || connectionConfig.Identities?.Count == 0)
                         {
                             var newConnection = new QlikConnection(null, connectionConfig);
-                            if (Connect(newConnection))
+                            if (Connect(newConnection, openConnection))
                             {
                                 logger.Debug($"Connection count {Connections.Count}.");
                                 return newConnection;
@@ -242,10 +206,10 @@ namespace Ser.Connections
                                 {
                                     logger.Warn("Emergency connection mode - Wait for free connection.");
                                     emergencyConnectionCount++;
-                                    if (emergencyConnectionCount >= 50)
+                                    if (emergencyConnectionCount == 50)
                                         throw new Exception("Emergency connection mode - Timeout reached.");
                                     Thread.Sleep(1000);
-                                    return GetConnection(connectionConfigs);
+                                    return GetConnection(connectionConfigs, false);
                                 }
                             }
                         }

@@ -1,0 +1,64 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Q2g.HelperQlik</RootNamespace>
+    <PackageId>Q2gHelperQlik</PackageId>
+    <Authors>Konrad Mattheis und Martin Berthold</Authors>
+    <Company>q2g</Company>
+    <Copyright>Copyright (c) 2019</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="enigma.net" Version="0.14.0-alpha0015" />
+    <PackageReference Include="GitVersionTask" Version="4.0.0" PrivateAssets="All" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+    <PackageReference Include="NLog" Version="4.5.11" />
+    <PackageReference Include="Q2gHelperPem" Version="1.2.0" />
+    <PackageReference Include="qlik-engineapi" Version="0.3.0-alpha0015" />
+    <PackageReference Include="SerApi" Version="3.4.2" />
+  </ItemGroup>
+
+  <Choose>
+    <When Condition="'$(MSBuildRuntimeType)' == 'Core'">
+      <PropertyGroup>
+        <TargetFramework>netcoreapp2.1</TargetFramework>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <TargetFrameworks>netcoreapp2.1;net452;net462</TargetFrameworks>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+
+  <Target Name="FixOnGitVersionTaskError" BeforeTargets="GetAssemblyVersion">
+    <CreateProperty Value="0.0.1-notgitversion" Condition="'$(GitVersion_NuGetVersion)' == ''">
+      <Output TaskParameter="Value" PropertyName="Version" />
+    </CreateProperty>
+    <PropertyGroup Condition="'$(GitVersion_NuGetVersion)' == ''">
+      <DefineConstants>$(DefineConstants);MISSINGGIT;</DefineConstants>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="FixOnGitVersionInfoTaskError" BeforeTargets="GetAssemblyVersion">
+    <CreateProperty Value="$(GitVersion_InformationalVersion)">
+      <Output TaskParameter="Value" PropertyName="FullVersionInfo" />
+    </CreateProperty>
+    <PropertyGroup Condition="'$(GitVersion_InformationalVersion)' == ''">
+      <FullVersionInfo>0.0.1-notgitversion</FullVersionInfo>
+    </PropertyGroup>
+  </Target>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net452'">
+    <Reference Include="System.Web" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Net.Http.WebRequest" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
+    <Reference Include="System.Web" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Net.Http.WebRequest" />
+  </ItemGroup>
+
+</Project>
