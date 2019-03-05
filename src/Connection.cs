@@ -15,19 +15,17 @@ namespace Q2g.HelperQlik
     using System.Net;
     using NLog;
     using System.Security.Cryptography.X509Certificates;
-    using System.IO;
     using System.Collections.Generic;
     using System.Net.Http;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
     using enigma;
-    using System.Text;
-    using Ser.Api;
     using System.Net.WebSockets;
     using System.Threading;
     using Qlik.EngineAPI;
     using ImpromptuInterface;
     using Q2g.HelperPem;
+    using Ser.Api;
     #endregion
 
     #region Enumeration
@@ -38,7 +36,7 @@ namespace Q2g.HelperQlik
     }
     #endregion
 
-    public class QlikConnection
+    public class Connection
     {
         #region Logger
         private static Logger logger = LogManager.GetCurrentClassLogger();
@@ -46,7 +44,7 @@ namespace Q2g.HelperQlik
 
         #region Properties & Variables
         public Uri ConnectUri { get; private set; }
-        public SerConnection Config { get; private set; }
+        public ConnectionConfig Config { get; private set; }
         public Cookie ConnectCookie { get; private set; }
         public IDoc CurrentApp { get; private set; }
         public QlikAppMode Mode { get; private set; }
@@ -59,7 +57,7 @@ namespace Q2g.HelperQlik
         #endregion
 
         #region Constructor & Init
-        public QlikConnection(string identity, SerConnection config)
+        public Connection(string identity, ConnectionConfig config)
         {
             ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
             ServicePointManager.ServerCertificateValidationCallback += (a, b, c, d) => { return true; };

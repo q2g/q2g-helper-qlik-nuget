@@ -13,9 +13,6 @@ namespace Q2g.HelperQlik
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Ser.Api;
     using NLog;
     using enigma;
     using Newtonsoft.Json;
@@ -30,14 +27,14 @@ namespace Q2g.HelperQlik
         #endregion
 
         #region Variables && Properties
-        private ConcurrentDictionary<string, QlikConnection> Connections = new ConcurrentDictionary<string, QlikConnection>();
+        private ConcurrentDictionary<string, Connection> Connections = new ConcurrentDictionary<string, Connection>();
         private readonly object threadObject = new object();
         private int emergencyConnectionCount = 0;
         private bool canConnect = true;
         #endregion
 
         #region Private Methods
-        public QlikConnection FindConnection(SerConnection config)
+        public Connection FindConnection(ConnectionConfig config)
         {
             try
             {
@@ -75,7 +72,7 @@ namespace Q2g.HelperQlik
             }
         }
 
-        private bool Connect(QlikConnection connection)
+        private bool Connect(Connection connection)
         {
             try
             {
@@ -128,10 +125,10 @@ namespace Q2g.HelperQlik
             }
         }
 
-        public SerConnection GetConnConfig(SerConnection config, string serverUri = null, string appName = null)
+        public ConnectionConfig GetConnConfig(ConnectionConfig config, string serverUri = null, string appName = null)
         {
             var jsonSerConfig = JsonConvert.SerializeObject(config);
-            var configCopy = JsonConvert.DeserializeObject<SerConnection>(jsonSerConfig);
+            var configCopy = JsonConvert.DeserializeObject<ConnectionConfig>(jsonSerConfig);
             if (!String.IsNullOrEmpty(serverUri))
             {
                 if (!Uri.TryCreate(serverUri, UriKind.Absolute, out var uriResult))
@@ -147,14 +144,14 @@ namespace Q2g.HelperQlik
             return configCopy;
         }
 
-        public static QlikConnection NewConnection(SerConnection connectionConfig)
+        public static Connection NewConnection(ConnectionConfig connectionConfig)
         {
             try
             {
                 var distinctIdentities = connectionConfig?.Identities?.Distinct()?.ToArray() ?? new string[0];
                 foreach (var identity in distinctIdentities)
                 {
-                    var newConnection = new QlikConnection(identity, connectionConfig);
+                    var newConnection = new Connection(identity, connectionConfig);
                     if (newConnection.Connect())
                     {
                         newConnection.IsFree = false;
@@ -164,7 +161,7 @@ namespace Q2g.HelperQlik
 
                 if (connectionConfig.Identities == null || connectionConfig.Identities.Count == 0)
                 {
-                    var conn = new QlikConnection(null, connectionConfig);
+                    var conn = new Connection(null, connectionConfig);
                     if (conn.Connect())
                         return conn;
                 }
@@ -177,7 +174,7 @@ namespace Q2g.HelperQlik
             }
         }
 
-        public int LoadConnections(List<SerConnection> connectionConfigs, int coreCount)
+        public int LoadConnections(List<ConnectionConfig> connectionConfigs, int coreCount)
         {
             try
             {
@@ -191,7 +188,7 @@ namespace Q2g.HelperQlik
                         {
                             if (Connections.Count < coreCount)
                             {
-                                var newConnection = new QlikConnection(identity, connectionConfig);
+                                var newConnection = new Connection(identity, connectionConfig);
                                 if (Connect(newConnection))
                                 {
                                     connCount++;
@@ -213,7 +210,7 @@ namespace Q2g.HelperQlik
             }
         }
 
-        public QlikConnection GetConnection(List<SerConnection> connectionConfigs)
+        public Connection GetConnection(List<ConnectionConfig> connectionConfigs)
         {
             try
             {
@@ -230,7 +227,7 @@ namespace Q2g.HelperQlik
 
                         if (connectionConfig.Identities == null || connectionConfig.Identities?.Count == 0)
                         {
-                            var newConnection = new QlikConnection(null, connectionConfig);
+                            var newConnection = new Connection(null, connectionConfig);
                             if (Connect(newConnection))
                             {
                                 logger.Debug($"Connection count {Connections.Count}.");
