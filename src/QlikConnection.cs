@@ -27,6 +27,7 @@ namespace Q2g.HelperQlik
     using System.Threading;
     using Qlik.EngineAPI;
     using ImpromptuInterface;
+    using Q2g.HelperPem;
     #endregion
 
     #region Enumeration
@@ -109,7 +110,7 @@ namespace Q2g.HelperQlik
             return Config.App;
         }
 
-        private Cookie GetCookie(ConnectionOptions options)
+        private Cookie GetCookie(CookieConnectionOptions options)
         {
             try
             {
@@ -121,20 +122,18 @@ namespace Q2g.HelperQlik
                 var connectUri = newUri.Uri;
                 logger.Debug($"Http ConnectUri: {connectUri}");
                 var cookieContainer = new CookieContainer();
-
-                X509Certificate2 qlikClientCert = null;
-                if (options.UseCertificate)
-                    qlikClientCert = options.GetQlikClientCertificate();
-
 #if NETFX
                var webHandler = new WebRequestHandler
                 {
                     UseDefaultCredentials = true,
                     CookieContainer = cookieContainer,
                 };
-                if (qlikClientCert != null)
+                if (options.UseCertificate)
+                {
+                    var qlikClientCert = new X509Certificate2();
+                    qlikClientCert = qlikClientCert.GetQlikClientCertificate(options.CertificatePath);
                     webHandler.ClientCertificates.Add(qlikClientCert);
-
+                }
                 var callback = ServicePointManager.ServerCertificateValidationCallback;
                 if (callback == null)
                     throw new NotImplementedException(".NET has no certificate check");
@@ -145,8 +144,12 @@ namespace Q2g.HelperQlik
                     UseDefaultCredentials = true,
                     CookieContainer = cookieContainer,
                 };
-                if (qlikClientCert != null)
+                if (options.UseCertificate)
+                {
+                    var qlikClientCert = new X509Certificate2();
+                    qlikClientCert = qlikClientCert.GetQlikClientCertificate(options.CertificatePath);
                     handler.ClientCertificates.Add(qlikClientCert);
+                }
                 handler.ServerCertificateCustomValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
                 {
                     return true;
@@ -229,13 +232,14 @@ namespace Q2g.HelperQlik
                         switch (credType)
                         {
                             case QlikCredentialType.CERTIFICATE:
-                                var options = new ConnectionOptions()
+                                var domainUser = new DomainUser(credentials.Value);
+                                var options = new CookieConnectionOptions()
                                 {
                                     CertificatePath = credentials?.Cert ?? null,
+                                    HeaderName = "X-Qlik-User",
+                                    HeaderValue = $"UserDirectory={domainUser.UserDirectory};UserId={domainUser.UserId}",
                                     UseCertificate = true,
                                 };
-                                var clientCert = options.GetQlikClientCertificate();
-                                var certCollect = new X509Certificate2Collection(clientCert);
                                 ConnectCookie = GetCookie(options);
                                 webSocket.Options.Cookies.Add(ConnectCookie);
                                 logger.Debug($"Credential type: {credentials?.Type}");
@@ -257,7 +261,7 @@ namespace Q2g.HelperQlik
                                 break;
                             case QlikCredentialType.JWT:
                                 logger.Debug($"Jwt type: {credentials?.Key} - {credentials?.Value}.");
-                                options = new ConnectionOptions()
+                                options = new CookieConnectionOptions()
                                 {
                                     HeaderName = credentials?.Key,
                                     HeaderValue = credentials?.Value,
@@ -267,7 +271,7 @@ namespace Q2g.HelperQlik
                                 break;
                             case QlikCredentialType.HEADER:
                                 logger.Debug($"Header type: {credentials?.Key} - {credentials?.Value}.");
-                                options = new ConnectionOptions()
+                                options = new CookieConnectionOptions()
                                 {
                                     HeaderName = credentials?.Key,
                                     HeaderValue = credentials?.Value,
