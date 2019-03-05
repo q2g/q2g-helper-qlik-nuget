@@ -19,9 +19,6 @@
       <PropertyGroup>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
       </PropertyGroup>
-      <ItemGroup>
-        <PackageReference Include="Q2g.HelperQlik" Version="1.0.0" />
-      </ItemGroup>
     </When>
     <Otherwise>
       <PropertyGroup>
