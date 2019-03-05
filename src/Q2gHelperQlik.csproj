@@ -2,15 +2,39 @@
 
   <PropertyGroup>
     <RootNamespace>Q2g.HelperQlik</RootNamespace>
-    <PackageId>Q2gHelperQlik</PackageId>
+    <PackageId>Q2g.Helper.Qlik</PackageId>
     <Authors>Konrad Mattheis und Martin Berthold</Authors>
     <Company>q2g</Company>
     <Copyright>Copyright (c) 2019</Copyright>
+    <Product>Q2gHelperQlik</Product>
+
+    <Version>$(GitVersion_NuGetVersion)</Version>
+
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
+
+  <Choose>
+    <When Condition="'$(Configuration)' == 'Release'">
+      <PropertyGroup>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+      </PropertyGroup>
+      <ItemGroup>
+        <PackageReference Include="Q2g.HelperQlik" Version="1.0.0" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
 
   <ItemGroup>
     <PackageReference Include="enigma.net" Version="0.14.0-alpha0015" />
     <PackageReference Include="GitVersionTask" Version="4.0.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta-63127-02" PrivateAssets="All"/>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
     <PackageReference Include="NLog" Version="4.5.11" />
     <PackageReference Include="Q2gHelperPem" Version="1.2.0" />
@@ -30,6 +54,13 @@
       </PropertyGroup>
     </Otherwise>
   </Choose>
+
+  <Target Name="PublishToNugetWithAPIKey" AfterTargets="GenerateNuspec">
+    <ReadLinesFromFile File="$(SolutionDir)\..\..\nugetapikey.txt">
+      <Output TaskParameter="Lines" PropertyName="NugetAPIKey" />
+    </ReadLinesFromFile>
+    <Exec WorkingDirectory="$(BaseDir)" Command="dotnet nuget push $(PackageOutputAbsolutePath)$(PackageId).$(PackageVersion).nupkg -k $(NugetAPIKey) -s https://api.nuget.org/v3/index.json" />
+  </Target>
 
   <Target Name="FixOnGitVersionInfoTaskError" BeforeTargets="GetAssemblyVersion">
     <CreateProperty Value="$(GitVersion_InformationalVersion)">
