@@ -126,8 +126,8 @@ namespace Q2g.HelperQlik
                 if (options.UseCertificate)
                     qlikClientCert = options.GetQlikClientCertificate();
 
-#if NET452 || NET462
-                var webHandler = new WebRequestHandler
+#if NETFX
+               var webHandler = new WebRequestHandler
                 {
                     UseDefaultCredentials = true,
                     CookieContainer = cookieContainer,
@@ -217,14 +217,10 @@ namespace Q2g.HelperQlik
                     {
                         var webSocket = new ClientWebSocket();
                         webSocket.Options.Cookies = new CookieContainer();
-#if NET452
+#if NETFX
                         var callback = ServicePointManager.ServerCertificateValidationCallback;
                         if (callback == null)
-                        throw new NotImplementedException(".NET has no certificate check");
-#elif NET462
-                        var callback = ServicePointManager.ServerCertificateValidationCallback;
-                        if (callback == null)
-                        throw new NotImplementedException(".NET has no certificate check");
+                            throw new NotImplementedException(".NET has no certificate check");
 #else
                         webSocket.Options.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
 #endif
