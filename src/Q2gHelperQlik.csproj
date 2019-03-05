@@ -2,14 +2,13 @@
 
   <PropertyGroup>
     <RootNamespace>Q2g.HelperQlik</RootNamespace>
-    <PackageId>Q2g.Helper.Qlik</PackageId>
+    <PackageId>Q2g.HelperQlik</PackageId>
     <Authors>Konrad Mattheis und Martin Berthold</Authors>
     <Company>q2g</Company>
     <Copyright>Copyright (c) 2019</Copyright>
     <Product>Q2gHelperQlik</Product>
 
     <Version>$(GitVersion_NuGetVersion)</Version>
-
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
