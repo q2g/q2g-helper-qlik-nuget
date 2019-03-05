@@ -6,6 +6,7 @@ using System.Text;
 
 namespace Q2g.HelperQlik
 {
-    //In the future use this Api without the dependence to Ser.Api.
+    // In the future use this Api without the dependence to Ser.Api.
+    // Issue #4
     public class ConnectionConfig : SerConnection { }
 }
