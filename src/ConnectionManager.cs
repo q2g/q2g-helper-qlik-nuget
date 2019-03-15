@@ -210,7 +210,7 @@ namespace Q2g.HelperQlik
             }
         }
 
-        public Connection GetConnection(List<ConnectionConfig> connectionConfigs)
+        public Connection GetConnection(List<ConnectionConfig> connectionConfigs, CancellationToken? token = null)
         {
             try
             {
@@ -235,6 +235,10 @@ namespace Q2g.HelperQlik
                             }
                             else
                             {
+                                if (token.HasValue)
+                                    if (token.Value.IsCancellationRequested)
+                                        throw new Exception("No connection - Canceled by user.");
+
                                 if (Connections.Count > 0)
                                 {
                                     logger.Warn("Emergency connection mode - Wait for free connection.");
