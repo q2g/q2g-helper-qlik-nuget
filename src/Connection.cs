@@ -292,7 +292,9 @@ namespace Q2g.HelperQlik
 
                 SocketSession = Enigma.Create(config);
                 var globalTask = SocketSession.OpenAsync();
-                globalTask.Wait();
+                globalTask.Wait(7500);
+                if (!globalTask.IsCompleted)
+                    throw new Exception("No connection to qlik.");
                 IGlobal global = Impromptu.ActLike<IGlobal>(globalTask.Result);
                 var task = global.IsDesktopModeAsync();
                 task.Wait(2500);
