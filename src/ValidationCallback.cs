@@ -32,6 +32,14 @@ namespace Q2g.HelperQlik
         public static SerConnection Connection { get; set; }
         #endregion
 
+        #region Private Methods
+        private static string TrimHiddenChars(string value)
+        {
+            var chars = value.ToCharArray().Where(c => c < 128).ToArray();
+            return new string(chars);
+        }
+        #endregion
+
         #region Public Methods
         public static bool ValidateRemoteCertificate(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors error)
         {
@@ -65,12 +73,11 @@ namespace Q2g.HelperQlik
                             Uri uri = null;
                             if (!String.IsNullOrEmpty(item.Url))
                                 uri = new Uri(item.Url);
-                            var thumbprint = item.Thumbprint.Replace(":", "").Replace(" ", "").ToLowerInvariant();
-                            var certThumbprint = cert.GetCertHashString().ToLowerInvariant();
+                            string thumbprint = TrimHiddenChars(item.Thumbprint.Replace(":", "").Replace(" ", "").ToLowerInvariant());
+                            string certThumbprint = TrimHiddenChars(cert.GetCertHashString().ToLowerInvariant());
                             if ((thumbprint == certThumbprint)
-                                &&
-                                ((uri == null) || (uri.Host.ToLowerInvariant() == requestUri.Host.ToLowerInvariant())))
-                                return true;
+                                && ((uri == null) || (uri.Host.ToLowerInvariant() == requestUri.Host.ToLowerInvariant())))
+                                    return true;
                         }
                         catch (Exception ex)
                         {
