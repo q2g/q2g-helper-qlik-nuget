@@ -34,6 +34,12 @@ namespace Q2g.HelperQlik
         DESKTOP,
         SERVER
     }
+
+    public enum SchemeMode
+    {
+        WEB,
+        WEBSOCKET
+    }
     #endregion
 
     public class Connection
@@ -67,7 +73,7 @@ namespace Q2g.HelperQlik
             Config = config;
             Identity = identity;
 
-            var connectUrl = SwitchScheme(Config.ServerUri.AbsoluteUri);
+            var connectUrl = SwitchScheme(Config.ServerUri.AbsoluteUri, SchemeMode.WEBSOCKET);
             var appurl = Uri.EscapeDataString(SenseUtilities.GetFullAppName(Config.App).TrimStart('/'));
             connectUrl = $"{connectUrl}/app/{appurl}";
 
@@ -87,11 +93,20 @@ namespace Q2g.HelperQlik
         #endregion
 
         #region Private Methods
-        private string SwitchScheme(string value)
+        private string SwitchScheme(string value, SchemeMode mode)
         {
-            value = value.Replace("http://", "ws://");
-            value = value.Replace("https://", "wss://");
-            return value.TrimEnd('/');
+            if (mode == SchemeMode.WEBSOCKET)
+            {
+                value = value.Replace("http://", "ws://");
+                value = value.Replace("https://", "wss://");
+                return value.TrimEnd('/');
+            }
+            else
+            {
+                value = value.Replace("ws://", "http://");
+                value = value.Replace("wss://", "https://");
+                return value.TrimEnd('/');
+            }
         }
 
         private string GetAppId(IGlobal global)
@@ -108,72 +123,22 @@ namespace Q2g.HelperQlik
             return Config.App;
         }
 
-        private Cookie GetCookie(CookieConnectionOptions options)
+        private Cookie GetFirstSessionCookie(Uri serverUri, NetworkCredential credentials, string cookieName)
         {
-            try
+            CookieContainer cookieContainer = new CookieContainer();
+            var connectionHandler = new HttpClientHandler
             {
-                if (ConnectCookie != null)
-                    return ConnectCookie;
-                var qlikCookieConnection = BuildQrsUri(ConnectUri, Config.ServerUri);
-                var newUri = new UriBuilder(qlikCookieConnection);
-                newUri.Path += "/sense/app";
-                var connectUri = newUri.Uri;
-                logger.Debug($"Http ConnectUri: {connectUri}");
-                var cookieContainer = new CookieContainer();
-#if NETFX
-               var webHandler = new WebRequestHandler
-                {
-                    UseDefaultCredentials = true,
-                    CookieContainer = cookieContainer,
-                };
-                if (options.UseCertificate)
-                {
-                    var qlikClientCert = new X509Certificate2();
-                    qlikClientCert = qlikClientCert.GetQlikClientCertificate(options.CertificatePath);
-                    webHandler.ClientCertificates.Add(qlikClientCert);
-                }
-                var callback = ServicePointManager.ServerCertificateValidationCallback;
-                if (callback == null)
-                    throw new NotImplementedException(".NET has no certificate check");
-                var connection = new HttpClient(webHandler);
-#else
-                var handler = new HttpClientHandler
-                {
-                    UseDefaultCredentials = true,
-                    CookieContainer = cookieContainer,
-                };
-                if (options.UseCertificate)
-                {
-                    var qlikClientCert = new X509Certificate2();
-                    qlikClientCert = qlikClientCert.GetQlikClientCertificate(options.CertificatePath);
-                    handler.ClientCertificates.Add(qlikClientCert);
-                }
-                handler.ServerCertificateCustomValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
-                {
-                    return true;
-                };
-                var connection = new HttpClient(handler);
-#endif
-                if (!String.IsNullOrEmpty(options.HeaderName))
-                    connection.DefaultRequestHeaders.Add(options.HeaderName, options.HeaderValue);
-                var message = connection.GetAsync(connectUri).Result;
-                logger.Debug($"Http connection message: {message}");
-
-                var responseCookies = cookieContainer?.GetCookies(connectUri)?.Cast<Cookie>() ?? null;
-                var cookie = responseCookies.FirstOrDefault(c => c.Name.Equals(options.CookieName)) ?? null;
-                if (cookie != null)
-                {
-                    logger.Debug($"The session cookie {cookie?.Name}={cookie?.Value} was generated.");
-                    return cookie;
-                }
-                else
-                    throw new Exception("No connection to qlik");
-            }
-            catch (Exception ex)
-            {
-                logger.Error(ex, "Can´t create a qlik session cookie.");
-                return null;
-            }
+                UseDefaultCredentials = true,
+                CookieContainer = cookieContainer,
+                Credentials = new CredentialCache { { serverUri, "NTLM", credentials } }
+            };
+            connectionHandler.ServerCertificateCustomValidationCallback += (sender, cert, chain, sslPolicyErrors) => { return true; };
+            var connection = new HttpClient(connectionHandler);
+            connection.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36");
+            var message = connection.GetAsync(serverUri).Result;
+            Console.WriteLine($"Message: {message.ToString()}");
+            IEnumerable<Cookie> responseCookies = cookieContainer.GetCookies(serverUri).Cast<Cookie>();
+            return responseCookies.First(cookie => cookie.Name.Equals(cookieName));
         }
         #endregion
 
@@ -218,32 +183,30 @@ namespace Q2g.HelperQlik
                     {
                         var webSocket = new ClientWebSocket();
                         webSocket.Options.Cookies = new CookieContainer();
-#if NETFX
-                        var callback = ServicePointManager.ServerCertificateValidationCallback;
-                        if (callback == null)
-                            throw new NotImplementedException(".NET has no certificate check");
-#else
                         webSocket.Options.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
-#endif
                         var credentials = Config?.Credentials ?? null;
                         var credType = Config?.Credentials?.Type ?? QlikCredentialType.NONE;
                         switch (credType)
                         {
                             case QlikCredentialType.CERTIFICATE:
-                                var domainUser = new DomainUser(credentials.Value);
-                                var options = new CookieConnectionOptions()
-                                {
-                                    CertificatePath = credentials?.Cert ?? null,
-                                    HeaderName = "X-Qlik-User",
-                                    HeaderValue = $"UserDirectory={domainUser.UserDirectory};UserId={domainUser.UserId}",
-                                    UseCertificate = true,
-                                };
-                                ConnectCookie = GetCookie(options);
-                                webSocket.Options.Cookies.Add(ConnectCookie);
-                                logger.Debug($"Credential type: {credentials?.Type}");
+                                logger.Warn($"CERTIFICATE is not supported - Its the old way of SDK!!!");
                                 break;
                             case QlikCredentialType.WINDOWSAUTH:
-                                webSocket.Options.Credentials = new NetworkCredential(credentials?.Key, credentials?.Value);
+                                var networkCredentials = CredentialCache.DefaultNetworkCredentials;
+                                if (credentials?.Key != null && credentials?.Value != null)
+                                    networkCredentials = new NetworkCredential(credentials?.Key, credentials?.Value);
+                                var webUri = new Uri(SwitchScheme(ConnectUri.AbsoluteUri, SchemeMode.WEB));
+                                var cookieName = "X-Qlik-Session";
+                                if (credentials?.Cert != null)
+                                    cookieName = credentials.Cert;
+                                var webCookie = GetFirstSessionCookie(new Uri($"{webUri.Scheme}://{webUri.Host}"), networkCredentials, cookieName);
+                                ConnectCookie = new Cookie(webCookie.Name, webCookie.Value)
+                                {
+                                    Secure = true,
+                                    Domain = ConnectUri.Host,
+                                    Path = "/",
+                                };
+                                webSocket.Options.Cookies.Add(ConnectCookie);
                                 logger.Debug($"WinAuth type: {credentials?.Type} with User {credentials?.Key}");
                                 break;
                             case QlikCredentialType.SESSION:
@@ -259,23 +222,12 @@ namespace Q2g.HelperQlik
                                 break;
                             case QlikCredentialType.JWT:
                                 logger.Debug($"Jwt type: {credentials?.Key} - {credentials?.Value}.");
-                                options = new CookieConnectionOptions()
-                                {
-                                    HeaderName = credentials?.Key,
-                                    HeaderValue = credentials?.Value,
-                                };
-                                ConnectCookie = GetCookie(options);
-                                webSocket.Options.Cookies.Add(ConnectCookie);
+                                var keyName = credentials?.Key ?? "Authorization";
+                                var keyValue = credentials?.Value ?? null; //Bearer???
+                                logger.Warn($"JWT is not supported - The SER connector resolve the bearer token!!!");
                                 break;
                             case QlikCredentialType.HEADER:
-                                logger.Debug($"Header type: {credentials?.Key} - {credentials?.Value}.");
-                                options = new CookieConnectionOptions()
-                                {
-                                    HeaderName = credentials?.Key,
-                                    HeaderValue = credentials?.Value,
-                                };
-                                ConnectCookie = GetCookie(options);
-                                webSocket.Options.Cookies.Add(ConnectCookie);
+                                logger.Warn($"HEADER is not supported - Is too unsafe!!!");
                                 break;
                             case QlikCredentialType.NONE:
                                 logger.Debug($"None type: No Authentication.");
