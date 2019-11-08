@@ -4,11 +4,11 @@
     <RootNamespace>Q2g.HelperQlik</RootNamespace>
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <PackageId>Q2g.HelperQlik</PackageId>
-    <Authors>Konrad Mattheis und Martin Berthold</Authors>
-    <Company>q2g</Company>
+    <Authors>akquinet finance &amp; controlling GmbH</Authors>
+    <Company>akquinet finance &amp; controlling GmbH</Company>
     <Copyright>Copyright (c) 2019</Copyright>
     <Product>Q2gHelperQlik</Product>
-    <Version>$(GitVersion_NuGetVersion)</Version>
+    <Version>$(GitVersion_InformationalVersion)</Version>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
