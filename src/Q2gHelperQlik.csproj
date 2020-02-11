@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <RootNamespace>Q2g.HelperQlik</RootNamespace>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <PackageId>Q2g.HelperQlik</PackageId>
     <Authors>akquinet finance &amp; controlling GmbH</Authors>
     <Company>akquinet finance &amp; controlling GmbH</Company>
