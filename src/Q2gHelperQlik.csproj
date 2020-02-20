@@ -6,7 +6,7 @@
     <PackageId>Q2g.HelperQlik</PackageId>
     <Authors>akquinet finance &amp; controlling GmbH</Authors>
     <Company>akquinet finance &amp; controlling GmbH</Company>
-    <Copyright>Copyright (c) 2020</Copyright>
+    <Copyright>Copyright (c) $([System.DateTime]::Today.ToString('yyyy'))</Copyright>
     <Product>Q2gHelperQlik</Product>
     <Version>$(GitVersion_InformationalVersion)</Version>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
