@@ -48,7 +48,7 @@
         public bool IsFree { get; set; } = false;
         public string Identity { get; set; } = null;
         public string ConnId { get; set; } = Guid.NewGuid().ToString();
-        public List<DocListEntry> PossibleApps { get; private set; } = new List<DocListEntry>();
+        public static List<DocListEntry> PossibleApps { get; private set; } = new List<DocListEntry>();
 
         private bool IsSharedSession { get; set; }
         private Session SocketSession = null;
@@ -248,7 +248,12 @@
                 if (task.Result)
                     Mode = QlikAppMode.DESKTOP;
                 if (loadPossibleApps)
-                    PossibleApps = global.GetDocListAsync().Result;
+                {
+                    lock (lockObject)
+                    {
+                        PossibleApps = global.GetDocListAsync().Result;
+                    }
+                }
                 logger.Debug($"Use connection mode: {Mode}");
                 if (IsSharedSession)
                 {
