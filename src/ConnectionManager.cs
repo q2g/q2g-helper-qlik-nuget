@@ -135,7 +135,7 @@
             return configCopy;
         }
 
-        public static Connection NewConnection(ConnectionConfig connectionConfig)
+        public static Connection NewConnection(ConnectionConfig connectionConfig, bool loadPossibleApps = false)
         {
             try
             {
@@ -143,7 +143,7 @@
                 foreach (var identity in distinctIdentities)
                 {
                     var newConnection = new Connection(identity, connectionConfig);
-                    if (newConnection.Connect())
+                    if (newConnection.Connect(loadPossibleApps))
                     {
                         newConnection.IsFree = false;
                         return newConnection;
@@ -153,7 +153,7 @@
                 if (connectionConfig.Identities == null || connectionConfig.Identities.Count == 0)
                 {
                     var conn = new Connection(null, connectionConfig);
-                    if (conn.Connect())
+                    if (conn.Connect(loadPossibleApps))
                         return conn;
                 }
                 return null;
