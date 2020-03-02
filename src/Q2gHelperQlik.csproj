@@ -18,20 +18,20 @@
     <When Condition="'$(Configuration)' == 'Release'">
       <ItemGroup>
         <Reference Include="Q2gHelperPem">
-          <HintPath>..\..\q2g-helper-pem-nuget\src\bin\Release\$(TargetFramework)\Q2gHelperPem.dll</HintPath>
+          <HintPath>..\..\q2g-helper-pem\src\bin\Release\$(TargetFramework)\Q2gHelperPem.dll</HintPath>
         </Reference>
         <Reference Include="Ser.Api">
-          <HintPath>..\..\ser-api-nuget\src\bin\Release\$(TargetFramework)\SerApi.dll</HintPath>
+          <HintPath>..\..\ser-api\src\bin\Release\$(TargetFramework)\SerApi.dll</HintPath>
         </Reference>
       </ItemGroup>
     </When>
     <Otherwise>
       <ItemGroup>
         <Reference Include="Q2gHelperPem">
-          <HintPath>..\..\q2g-helper-pem-nuget\src\bin\Debug\$(TargetFramework)\Q2gHelperPem.dll</HintPath>
+          <HintPath>..\..\q2g-helper-pem\src\bin\Debug\$(TargetFramework)\Q2gHelperPem.dll</HintPath>
         </Reference>
         <Reference Include="Ser.Api">
-          <HintPath>..\..\ser-api-nuget\src\bin\Debug\$(TargetFramework)\SerApi.dll</HintPath>
+          <HintPath>..\..\ser-api\src\bin\Debug\$(TargetFramework)\SerApi.dll</HintPath>
         </Reference>
       </ItemGroup>
     </Otherwise>
