@@ -48,6 +48,8 @@
         public bool IsFree { get; set; } = false;
         public string Identity { get; set; } = null;
         public string ConnId { get; set; } = Guid.NewGuid().ToString();
+        public static List<DocListEntry> PossibleApps { get; private set; } = new List<DocListEntry>();
+
         private bool IsSharedSession { get; set; }
         private Session SocketSession = null;
         private readonly object lockObject = new object();
@@ -162,7 +164,7 @@
             return qrsBuilder.Uri;
         }
 
-        public bool Connect()
+        public bool Connect(bool loadPossibleApps = false)
         {
             try
             {
@@ -245,6 +247,13 @@
                     throw new Exception("No connection to qlik.");
                 if (task.Result)
                     Mode = QlikAppMode.DESKTOP;
+                if (loadPossibleApps)
+                {
+                    lock (lockObject)
+                    {
+                        PossibleApps = global.GetDocListAsync().Result;
+                    }
+                }
                 logger.Debug($"Use connection mode: {Mode}");
                 if (IsSharedSession)
                 {
