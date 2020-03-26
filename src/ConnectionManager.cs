@@ -5,10 +5,10 @@
     using System.Collections.Generic;
     using System.Linq;
     using NLog;
-    using enigma;
     using Newtonsoft.Json;
     using System.Threading;
     using System.Collections.Concurrent;
+    using Ser.Api;
     #endregion
 
     public class ConnectionManager
@@ -25,7 +25,7 @@
         #endregion
 
         #region Private Methods
-        public Connection FindConnection(ConnectionConfig config)
+        public Connection FindConnection(SerConnection config)
         {
             try
             {
@@ -116,10 +116,10 @@
             }
         }
 
-        public ConnectionConfig GetConnConfig(ConnectionConfig config, string serverUri = null, string appName = null)
+        public SerConnection GetConnConfig(SerConnection config, string serverUri = null, string appName = null)
         {
             var jsonSerConfig = JsonConvert.SerializeObject(config);
-            var configCopy = JsonConvert.DeserializeObject<ConnectionConfig>(jsonSerConfig);
+            var configCopy = JsonConvert.DeserializeObject<SerConnection>(jsonSerConfig);
             if (!String.IsNullOrEmpty(serverUri))
             {
                 if (!Uri.TryCreate(serverUri, UriKind.Absolute, out var uriResult))
@@ -135,7 +135,7 @@
             return configCopy;
         }
 
-        public static Connection NewConnection(ConnectionConfig connectionConfig, bool loadPossibleApps = false)
+        public static Connection NewConnection(SerConnection connectionConfig, bool loadPossibleApps = false)
         {
             try
             {
@@ -165,7 +165,7 @@
             }
         }
 
-        public int LoadConnections(List<ConnectionConfig> connectionConfigs, int coreCount)
+        public int LoadConnections(List<SerConnection> connectionConfigs, int coreCount)
         {
             try
             {
@@ -201,7 +201,7 @@
             }
         }
 
-        public Connection GetConnection(List<ConnectionConfig> connectionConfigs, CancellationToken? token = null)
+        public Connection GetConnection(List<SerConnection> connectionConfigs, CancellationToken? token = null)
         {
             try
             {

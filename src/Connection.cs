@@ -5,17 +5,14 @@
     using System.Linq;
     using System.Net;
     using NLog;
-    using System.Security.Cryptography.X509Certificates;
     using System.Collections.Generic;
     using System.Net.Http;
-    using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
     using enigma;
     using System.Net.WebSockets;
     using System.Threading;
     using Qlik.EngineAPI;
     using ImpromptuInterface;
-    using Q2g.HelperPem;
     using Ser.Api;
     #endregion
 
@@ -41,7 +38,7 @@
 
         #region Properties & Variables
         public Uri ConnectUri { get; private set; }
-        public ConnectionConfig Config { get; private set; }
+        public SerConnection Config { get; private set; }
         public Cookie ConnectCookie { get; private set; }
         public IDoc CurrentApp { get; private set; }
         public QlikAppMode Mode { get; private set; }
@@ -56,7 +53,7 @@
         #endregion
 
         #region Constructor & Init
-        public Connection(string identity, ConnectionConfig config)
+        public Connection(string identity, SerConnection config)
         {
             ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
             ServicePointManager.ServerCertificateValidationCallback += (a, b, c, d) => { return true; };
@@ -67,7 +64,7 @@
             Identity = identity;
 
             var connectUrl = SwitchScheme(Config.ServerUri.AbsoluteUri, SchemeMode.WEBSOCKET);
-            var appurl = Uri.EscapeDataString(SenseUtilities.GetFullAppName(Config.App).TrimStart('/'));
+            var appurl = Uri.EscapeDataString(HelperUtilities.GetFullAppName(Config.App).TrimStart('/'));
             connectUrl = $"{connectUrl}/app/{appurl}";
 
             if (identity == null)
@@ -271,7 +268,7 @@
                 {
                     var appName = String.Empty;
                     if (Mode == QlikAppMode.DESKTOP)
-                        appName = SenseUtilities.GetFullAppName(Config.App);
+                        appName = HelperUtilities.GetFullAppName(Config.App);
                     else
                         appName = GetAppId(global);
                     logger.Debug($"Connect with app name: {appName}");
