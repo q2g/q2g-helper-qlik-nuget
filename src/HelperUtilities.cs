@@ -133,6 +133,8 @@
         {
             try
             {
+                input = input.Replace("(", "%28");
+                input = input.Replace(")", "%29");
                 var uri = new Uri(input);
                 return new Tuple<Uri, string>(uri, uri.Host);
             }
