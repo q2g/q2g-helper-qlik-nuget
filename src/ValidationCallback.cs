@@ -9,7 +9,6 @@
     using System.Net.Http;
     using System.Net.Security;
     using System.Security.Cryptography.X509Certificates;
-    using System.Text;
     using System.Linq;
     #endregion
 
@@ -68,7 +67,7 @@
                             string certThumbprint = TrimHiddenChars(cert.GetCertHashString().ToLowerInvariant());
                             if ((thumbprint == certThumbprint)
                                 && ((uri == null) || (uri.Host.ToLowerInvariant() == requestUri.Host.ToLowerInvariant())))
-                                    return true;
+                                return true;
                         }
                         catch (Exception ex)
                         {

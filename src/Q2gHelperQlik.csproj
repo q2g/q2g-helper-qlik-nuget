@@ -14,9 +14,22 @@
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="GitVersionTask" Version="5.2.4" PrivateAssets="All" />
+    <PackageReference Include="ImpromptuInterface" Version="7.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="NLog" Version="4.7.0" />
+  </ItemGroup>
+
   <Choose>
     <When Condition="'$(Configuration)' == 'Release'">
       <ItemGroup>
+        <Reference Include="enigma.net">
+          <HintPath>..\..\..\QlikAPIs\enigma.net\src\bin\Release\netcoreapp3.1\enigma.net.dll</HintPath>
+        </Reference>
+        <Reference Include="qlik-engineapi">
+          <HintPath>..\..\..\QlikAPIs\qlik-engineapi\src\qlik-engineapi\bin\Release\netcoreapp3.1\qlik-engineapi.dll</HintPath>
+        </Reference>
         <Reference Include="Q2gHelperPem">
           <HintPath>..\..\q2g-helper-pem\src\bin\Release\$(TargetFramework)\Q2gHelperPem.dll</HintPath>
         </Reference>
@@ -27,6 +40,12 @@
     </When>
     <Otherwise>
       <ItemGroup>
+        <Reference Include="enigma.net">
+          <HintPath>..\..\..\QlikAPIs\enigma.net\src\bin\Debug\netcoreapp3.1\enigma.net.dll</HintPath>
+        </Reference>
+        <Reference Include="qlik-engineapi">
+          <HintPath>..\..\..\QlikAPIs\qlik-engineapi\src\qlik-engineapi\bin\Debug\netcoreapp3.1\qlik-engineapi.dll</HintPath>
+        </Reference>
         <Reference Include="Q2gHelperPem">
           <HintPath>..\..\q2g-helper-pem\src\bin\Debug\$(TargetFramework)\Q2gHelperPem.dll</HintPath>
         </Reference>
@@ -36,15 +55,7 @@
       </ItemGroup>
     </Otherwise>
   </Choose>
-
-  <ItemGroup>
-    <PackageReference Include="enigma.net" Version="1.0.0" />
-    <PackageReference Include="GitVersionTask" Version="5.2.4" PrivateAssets="All" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="NLog" Version="4.7.0" />
-    <PackageReference Include="qlik-engineapi" Version="0.3.0-alpha0015" />
-  </ItemGroup>
-
+  
   <Target Name="GitVersion" BeforeTargets="AfterBuild">
     <Message Importance="High" Text="++++++ GitVersion: $(GitVersion_InformationalVersion) ++++++" />
   </Target>
