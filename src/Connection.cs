@@ -181,6 +181,7 @@
                         webSocket.Options.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
                         var credentials = Config?.Credentials ?? null;
                         var credType = Config?.Credentials?.Type ?? QlikCredentialType.NONE;
+                        logger.Debug($"Connection type is '{credType}'");
                         switch (credType)
                         {
                             case QlikCredentialType.CERTIFICATE:
