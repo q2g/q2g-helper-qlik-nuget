@@ -14,6 +14,10 @@
     using Qlik.EngineAPI;
     using ImpromptuInterface;
     using Ser.Api;
+    using System.IO;
+    using System.Security.Cryptography.X509Certificates;
+    using System.Text;
+    using Q2g.HelperPem;
     #endregion
 
     #region Enumeration
@@ -161,6 +165,39 @@
             return qrsBuilder.Uri;
         }
 
+        private string TicketRequest(string method, string server, string user, string userdirectory)
+        {
+            //Create URL to REST endpoint for tickets
+            var url = "https://" + server + ":4243/qps/ticket";
+
+            //Create the HTTP Request and add required headers and content in Xrfkey
+            var Xrfkey = "0123456789abcdef";
+            var request = (HttpWebRequest)WebRequest.Create(url + "?Xrfkey=" + Xrfkey);
+            // Add the method to authentication the user
+            var cert = new X509Certificate2();
+            cert = cert.GetQlikClientCertificate();
+            request.ClientCertificates.Add(cert);
+            request.Method = method;
+            request.Accept = "application/json";
+            request.Headers.Add("X-Qlik-Xrfkey", Xrfkey);
+            var body = "{ 'UserId':'" + user + "','UserDirectory':'" + userdirectory + "','Attributes': []}";
+            byte[] bodyBytes = Encoding.UTF8.GetBytes(body);
+
+            if (!String.IsNullOrEmpty(body))
+            {
+                request.ContentType = "application/json";
+                request.ContentLength = bodyBytes.Length;
+                var requestStream = request.GetRequestStream();
+                requestStream.Write(bodyBytes, 0, bodyBytes.Length);
+                requestStream.Close();
+            }
+
+            // make the web request and return the content
+            var response = (HttpWebResponse)request.GetResponse();
+            var stream = response.GetResponseStream();
+            return stream != null ? new StreamReader(stream).ReadToEnd() : String.Empty;
+        }
+
         public bool Connect(bool loadPossibleApps = false)
         {
             try
@@ -179,7 +216,10 @@
                         switch (credType)
                         {
                             case QlikCredentialType.CERTIFICATE:
-                                logger.Warn($"CERTIFICATE is not supported - Its the old way of SDK!!!");
+                                var cert = new X509Certificate2();
+                                cert = cert.GetQlikClientCertificate();
+                                webSocket.Options.ClientCertificates.Add(cert);
+                                webSocket.Options.SetRequestHeader(credentials.Key, credentials.Value);
                                 break;
                             case QlikCredentialType.WINDOWSAUTH:
                                 var networkCredentials = CredentialCache.DefaultNetworkCredentials;
@@ -220,8 +260,8 @@
                                 logger.Warn($"HEADER is not supported - Is too unsafe!!!");
                                 break;
                             case QlikCredentialType.NONE:
-                                logger.Debug($"None type: No Authentication.");
                                 // No Authentication for DESKTOP and DOCKER
+                                logger.Debug($"None type: No Authentication.");
                                 break;
                             default:
                                 throw new Exception("Unknown Qlik connection type.");
