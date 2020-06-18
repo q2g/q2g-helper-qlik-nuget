@@ -138,7 +138,7 @@
         #endregion
 
         #region Public Methods
-        public static Uri BuildQrsUri(Uri connectUrl, Uri baseUrl)
+        public static Uri BuildQrsUri(Uri connectUrl, Uri baseUrl, int? port = null)
         {
             var virtualProxy = baseUrl?.PathAndQuery?.Split(new char[] { '/' },
                            StringSplitOptions.RemoveEmptyEntries)?.FirstOrDefault() ?? null;
@@ -163,6 +163,10 @@
                     qrsBuilder.Scheme = "https";
                     break;
             }
+
+            if (port.HasValue)
+                qrsBuilder.Port = port.Value;
+
             return qrsBuilder.Uri;
         }
 
