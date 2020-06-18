@@ -217,7 +217,7 @@
                         {
                             case QlikCredentialType.CERTIFICATE:
                                 var cert = new X509Certificate2();
-                                cert = cert.GetQlikClientCertificate();
+                                cert = cert.GetQlikClientCertificate(credentials.Cert);
                                 webSocket.Options.ClientCertificates.Add(cert);
                                 webSocket.Options.SetRequestHeader(credentials.Key, credentials.Value);
                                 break;
