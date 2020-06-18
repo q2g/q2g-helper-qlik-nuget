@@ -37,7 +37,7 @@
     public class Connection
     {
         #region Logger
-        private static Logger logger = LogManager.GetCurrentClassLogger();
+        private readonly static Logger logger = LogManager.GetCurrentClassLogger();
         #endregion
 
         #region Properties & Variables
@@ -74,7 +74,7 @@
 
             if (identity == null)
             {
-                connectUrl = $"{connectUrl}/identity/{Guid.NewGuid().ToString()}";
+                connectUrl = $"{connectUrl}/identity/{Guid.NewGuid()}";
                 IsSharedSession = false;
             }
             else if (!String.IsNullOrEmpty(identity))
@@ -106,7 +106,7 @@
 
         private string GetAppId(IGlobal global)
         {
-            if (Guid.TryParse(Config.App, out var result))
+            if (Guid.TryParse(Config.App, out _))
                 return Config.App;
 
             dynamic results = global.GetDocListAsync<JArray>().Result;
@@ -131,7 +131,7 @@
             var connection = new HttpClient(connectionHandler);
             connection.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36");
             var message = connection.GetAsync(serverUri).Result;
-            Console.WriteLine($"Message: {message.ToString()}");
+            Console.WriteLine($"Message: {message}");
             IEnumerable<Cookie> responseCookies = cookieContainer.GetCookies(serverUri).Cast<Cookie>();
             return responseCookies.First(cookie => cookie.Name.Equals(cookieName));
         }
