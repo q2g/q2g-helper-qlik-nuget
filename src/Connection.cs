@@ -44,6 +44,7 @@
         public Uri ConnectUri { get; private set; }
         public SerConnection Config { get; private set; }
         public Cookie ConnectCookie { get; private set; }
+        public X509Certificate2 ConnectCertificate { get; private set; }
         public IDoc CurrentApp { get; private set; }
         public QlikAppMode Mode { get; private set; }
         public bool IsFree { get; set; } = false;
@@ -165,39 +166,6 @@
             return qrsBuilder.Uri;
         }
 
-        private string TicketRequest(string method, string server, string user, string userdirectory)
-        {
-            //Create URL to REST endpoint for tickets
-            var url = "https://" + server + ":4243/qps/ticket";
-
-            //Create the HTTP Request and add required headers and content in Xrfkey
-            var Xrfkey = "0123456789abcdef";
-            var request = (HttpWebRequest)WebRequest.Create(url + "?Xrfkey=" + Xrfkey);
-            // Add the method to authentication the user
-            var cert = new X509Certificate2();
-            cert = cert.GetQlikClientCertificate();
-            request.ClientCertificates.Add(cert);
-            request.Method = method;
-            request.Accept = "application/json";
-            request.Headers.Add("X-Qlik-Xrfkey", Xrfkey);
-            var body = "{ 'UserId':'" + user + "','UserDirectory':'" + userdirectory + "','Attributes': []}";
-            byte[] bodyBytes = Encoding.UTF8.GetBytes(body);
-
-            if (!String.IsNullOrEmpty(body))
-            {
-                request.ContentType = "application/json";
-                request.ContentLength = bodyBytes.Length;
-                var requestStream = request.GetRequestStream();
-                requestStream.Write(bodyBytes, 0, bodyBytes.Length);
-                requestStream.Close();
-            }
-
-            // make the web request and return the content
-            var response = (HttpWebResponse)request.GetResponse();
-            var stream = response.GetResponseStream();
-            return stream != null ? new StreamReader(stream).ReadToEnd() : String.Empty;
-        }
-
         public bool Connect(bool loadPossibleApps = false)
         {
             try
@@ -220,6 +188,7 @@
                                 cert = cert.GetQlikClientCertificate(credentials.Cert);
                                 webSocket.Options.ClientCertificates.Add(cert);
                                 webSocket.Options.SetRequestHeader(credentials.Key, credentials.Value);
+                                ConnectCertificate = cert;
                                 break;
                             case QlikCredentialType.WINDOWSAUTH:
                                 var networkCredentials = CredentialCache.DefaultNetworkCredentials;
