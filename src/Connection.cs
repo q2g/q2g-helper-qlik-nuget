@@ -14,6 +14,10 @@
     using Qlik.EngineAPI;
     using ImpromptuInterface;
     using Ser.Api;
+    using System.IO;
+    using System.Security.Cryptography.X509Certificates;
+    using System.Text;
+    using Q2g.HelperPem;
     #endregion
 
     #region Enumeration
@@ -33,13 +37,14 @@
     public class Connection
     {
         #region Logger
-        private static Logger logger = LogManager.GetCurrentClassLogger();
+        private readonly static Logger logger = LogManager.GetCurrentClassLogger();
         #endregion
 
         #region Properties & Variables
         public Uri ConnectUri { get; private set; }
         public SerConnection Config { get; private set; }
         public Cookie ConnectCookie { get; private set; }
+        public X509Certificate2 ConnectCertificate { get; private set; }
         public IDoc CurrentApp { get; private set; }
         public QlikAppMode Mode { get; private set; }
         public bool IsFree { get; set; } = false;
@@ -69,7 +74,7 @@
 
             if (identity == null)
             {
-                connectUrl = $"{connectUrl}/identity/{Guid.NewGuid().ToString()}";
+                connectUrl = $"{connectUrl}/identity/{Guid.NewGuid()}";
                 IsSharedSession = false;
             }
             else if (!String.IsNullOrEmpty(identity))
@@ -101,7 +106,7 @@
 
         private string GetAppId(IGlobal global)
         {
-            if (Guid.TryParse(Config.App, out var result))
+            if (Guid.TryParse(Config.App, out _))
                 return Config.App;
 
             dynamic results = global.GetDocListAsync<JArray>().Result;
@@ -126,14 +131,14 @@
             var connection = new HttpClient(connectionHandler);
             connection.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36");
             var message = connection.GetAsync(serverUri).Result;
-            Console.WriteLine($"Message: {message.ToString()}");
+            Console.WriteLine($"Message: {message}");
             IEnumerable<Cookie> responseCookies = cookieContainer.GetCookies(serverUri).Cast<Cookie>();
             return responseCookies.First(cookie => cookie.Name.Equals(cookieName));
         }
         #endregion
 
         #region Public Methods
-        public static Uri BuildQrsUri(Uri connectUrl, Uri baseUrl)
+        public static Uri BuildQrsUri(Uri connectUrl, Uri baseUrl, int? port = null)
         {
             var virtualProxy = baseUrl?.PathAndQuery?.Split(new char[] { '/' },
                            StringSplitOptions.RemoveEmptyEntries)?.FirstOrDefault() ?? null;
@@ -158,6 +163,10 @@
                     qrsBuilder.Scheme = "https";
                     break;
             }
+
+            if (port.HasValue)
+                qrsBuilder.Port = port.Value;
+
             return qrsBuilder.Uri;
         }
 
@@ -176,10 +185,15 @@
                         webSocket.Options.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
                         var credentials = Config?.Credentials ?? null;
                         var credType = Config?.Credentials?.Type ?? QlikCredentialType.NONE;
+                        logger.Debug($"Connection type is '{credType}'");
                         switch (credType)
                         {
                             case QlikCredentialType.CERTIFICATE:
-                                logger.Warn($"CERTIFICATE is not supported - Its the old way of SDK!!!");
+                                var cert = new X509Certificate2();
+                                cert = cert.GetQlikClientCertificate(credentials.Cert);
+                                webSocket.Options.ClientCertificates.Add(cert);
+                                webSocket.Options.SetRequestHeader(credentials.Key, credentials.Value);
+                                ConnectCertificate = cert;
                                 break;
                             case QlikCredentialType.WINDOWSAUTH:
                                 var networkCredentials = CredentialCache.DefaultNetworkCredentials;
@@ -220,8 +234,8 @@
                                 logger.Warn($"HEADER is not supported - Is too unsafe!!!");
                                 break;
                             case QlikCredentialType.NONE:
-                                logger.Debug($"None type: No Authentication.");
                                 // No Authentication for DESKTOP and DOCKER
+                                logger.Debug($"None type: No Authentication.");
                                 break;
                             default:
                                 throw new Exception("Unknown Qlik connection type.");
