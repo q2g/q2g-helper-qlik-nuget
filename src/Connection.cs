@@ -192,7 +192,7 @@
                                 var cert = new X509Certificate2();
                                 cert = cert.GetQlikClientCertificate(credentials.Cert);
                                 webSocket.Options.ClientCertificates.Add(cert);
-                                webSocket.Options.SetRequestHeader(credentials.Key, credentials.Value);
+                                webSocket.Options.SetRequestHeader(credentials?.Key, credentials?.Value);
                                 ConnectCertificate = cert;
                                 break;
                             case QlikCredentialType.WINDOWSAUTH:
@@ -227,11 +227,17 @@
                             case QlikCredentialType.JWT:
                                 logger.Debug($"Jwt type: {credentials?.Key} - {credentials?.Value}.");
                                 var keyName = credentials?.Key ?? "Authorization";
-                                var keyValue = credentials?.Value ?? null; //Bearer???
+                                var keyValue = credentials?.Value ?? null;
+                                webSocket.Options.SetRequestHeader(keyName, keyValue);
                                 logger.Warn($"JWT is not supported - The SER connector resolve the bearer token!!!");
                                 break;
                             case QlikCredentialType.HEADER:
                                 logger.Warn($"HEADER is not supported - Is too unsafe!!!");
+                                break;
+                            case QlikCredentialType.CLOUD:
+                                logger.Debug($"Connecting to Qlik Cloud.");
+                                logger.Debug($"Cloud type: {credentials?.Key} - {credentials?.Value}.");
+                                webSocket.Options.SetRequestHeader(credentials?.Key, credentials?.Value);
                                 break;
                             case QlikCredentialType.NONE:
                                 // No Authentication for DESKTOP and DOCKER
