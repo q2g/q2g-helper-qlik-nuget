@@ -43,7 +43,7 @@
                     return true;
                 }
 
-                if (!Connection.SslVerify)
+                if (!Connection?.SslVerify ?? false)
                 {
                     logger.Info("Use property 'SslVertify' with value 'false'.");
                     return true;
