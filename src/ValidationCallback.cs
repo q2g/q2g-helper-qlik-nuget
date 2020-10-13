@@ -75,13 +75,18 @@
                             string certThumbprint = TrimHiddenChars(cert.GetCertHashString().ToLowerInvariant());
                             if ((thumbprint == certThumbprint)
                                 && ((uri == null) || (uri.Host.ToLowerInvariant() == requestUri.Host.ToLowerInvariant())))
+                            {
+                                logger.Debug("Thumbprint was successfully found.");
                                 return true;
+                            }
                         }
                         catch (Exception ex)
                         {
                             logger.Error(ex, "Thumbprint could not be validated.");
                         }
                     }
+
+                    logger.Debug("No correct thumbprint found.");
                 }
                 return false;
             }
