@@ -14,7 +14,7 @@
     using Ser.Api;
     #endregion
 
-    public class SessionManager
+    public class JwtSessionManager
     {
         #region Logger
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
