@@ -20,10 +20,6 @@
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
         #endregion
 
-        #region Variables & Properties
-        private readonly List<SessionInfo> Sessions = new List<SessionInfo>();
-        #endregion
-
         #region Private Methods
         private Cookie GetJWTSession(Uri connectUri, string token, string cookieName = "X-Qlik-Session")
         {
@@ -119,7 +115,6 @@
                         AppId = appId,
                         User = qlikUser,
                     };
-                    Sessions.Add(sessionInfo);
                     return sessionInfo;
                 }
                 return null;
