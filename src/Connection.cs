@@ -239,6 +239,14 @@
                                 logger.Debug($"Cloud type: {credentials?.Key} - {credentials?.Value}.");
                                 webSocket.Options.SetRequestHeader(credentials?.Key, credentials?.Value);
                                 break;
+                            case QlikCredentialType.NEWSESSION:
+                                logger.Debug($"Connecting to Qlik with a new Session.");
+                                logger.Debug($"Session infos: {credentials?.Key} - {credentials?.Value}.");
+                                var jwtSession = new JwtSessionManager();
+                                var newSession = jwtSession.CreateNewSession(Config, new DomainUser(credentials?.Value), Config.App);
+                                ConnectCookie = newSession.Cookie;
+                                webSocket.Options.Cookies.Add(ConnectCookie);
+                                break;
                             case QlikCredentialType.NONE:
                                 // No Authentication for DESKTOP and DOCKER
                                 logger.Debug($"None type: No Authentication.");
