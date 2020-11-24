@@ -130,6 +130,7 @@
         {
             try
             {
+                logger.Debug($"The web socket '{session?.AppId ?? null}' connection is released.");
                 if (session?.QlikConn != null)
                 {
                     session.QlikConn.Close();
