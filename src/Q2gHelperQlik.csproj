@@ -25,10 +25,10 @@
     <When Condition="'$(Configuration)' == 'Release'">
       <ItemGroup>
         <Reference Include="enigma.net">
-          <HintPath>..\..\..\QlikAPIs\enigma.net\src\bin\Release\netcoreapp3.1\enigma.net.dll</HintPath>
+          <HintPath>..\..\..\QlikAPIs\enigma.net\src\bin\Release\$(TargetFramework)\enigma.net.dll</HintPath>
         </Reference>
         <Reference Include="qlik-engineapi">
-          <HintPath>..\..\..\QlikAPIs\qlik-engineapi\src\qlik-engineapi\bin\Release\netcoreapp3.1\qlik-engineapi.dll</HintPath>
+          <HintPath>..\..\..\QlikAPIs\qlik-engineapi\src\qlik-engineapi\bin\Release\$(TargetFramework)\qlik-engineapi.dll</HintPath>
         </Reference>
         <Reference Include="Q2gHelperPem">
           <HintPath>..\..\q2g-helper-pem\src\bin\Release\$(TargetFramework)\Q2gHelperPem.dll</HintPath>
@@ -41,10 +41,10 @@
     <Otherwise>
       <ItemGroup>
         <Reference Include="enigma.net">
-          <HintPath>..\..\..\QlikAPIs\enigma.net\src\bin\Debug\netcoreapp3.1\enigma.net.dll</HintPath>
+          <HintPath>..\..\..\QlikAPIs\enigma.net\src\bin\Debug\$(TargetFramework)\enigma.net.dll</HintPath>
         </Reference>
         <Reference Include="qlik-engineapi">
-          <HintPath>..\..\..\QlikAPIs\qlik-engineapi\src\qlik-engineapi\bin\Debug\netcoreapp3.1\qlik-engineapi.dll</HintPath>
+          <HintPath>..\..\..\QlikAPIs\qlik-engineapi\src\qlik-engineapi\bin\Debug\$(TargetFramework)\qlik-engineapi.dll</HintPath>
         </Reference>
         <Reference Include="Q2gHelperPem">
           <HintPath>..\..\q2g-helper-pem\src\bin\Debug\$(TargetFramework)\Q2gHelperPem.dll</HintPath>
