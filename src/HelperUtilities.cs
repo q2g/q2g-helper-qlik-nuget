@@ -134,14 +134,16 @@
             try
             {
                 logger.Debug($"Normalize Uri '{input}' to Qlik uri...");
-                var pathSplit = input.Split('/');
-                for (int i = 1; i < pathSplit.Length; i++)
-                    pathSplit[i] = Uri.EscapeDataString(pathSplit[i]);
-                var result = String.Join('/', pathSplit);
+                var pathSegmentArray = input.Split('/');
+                if (pathSegmentArray.Length <= 1)
+                    return input;
+                for (int i = 1; i < pathSegmentArray.Length; i++)
+                    pathSegmentArray[i] = Uri.EscapeDataString(pathSegmentArray[i]);
+                var result = String.Join('/', pathSegmentArray);
                 logger.Debug($"New Uri is '{result}'.");
                 return result;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 logger.Error(ex, $"Normalize Uri '{input}' has an error.");
                 return null;
