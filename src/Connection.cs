@@ -188,31 +188,6 @@
                         logger.Debug($"Connection type is '{credType}'");
                         switch (credType)
                         {
-                            case QlikCredentialType.CERTIFICATE:
-                                var cert = new X509Certificate2();
-                                cert = cert.GetQlikClientCertificate(credentials.Cert);
-                                webSocket.Options.ClientCertificates.Add(cert);
-                                webSocket.Options.SetRequestHeader(credentials?.Key, credentials?.Value);
-                                ConnectCertificate = cert;
-                                break;
-                            case QlikCredentialType.WINDOWSAUTH:
-                                var networkCredentials = CredentialCache.DefaultNetworkCredentials;
-                                if (credentials?.Key != null && credentials?.Value != null)
-                                    networkCredentials = new NetworkCredential(credentials?.Key, credentials?.Value);
-                                var webUri = new Uri(SwitchScheme(ConnectUri.AbsoluteUri, SchemeMode.WEB));
-                                var cookieName = "X-Qlik-Session";
-                                if (credentials?.Cert != null)
-                                    cookieName = credentials.Cert;
-                                var webCookie = GetFirstSessionCookie(new Uri($"{webUri.Scheme}://{webUri.Host}"), networkCredentials, cookieName);
-                                ConnectCookie = new Cookie(webCookie.Name, webCookie.Value)
-                                {
-                                    Secure = true,
-                                    Domain = ConnectUri.Host,
-                                    Path = "/",
-                                };
-                                webSocket.Options.Cookies.Add(ConnectCookie);
-                                logger.Debug($"WinAuth type: {credentials?.Type} with User {credentials?.Key}");
-                                break;
                             case QlikCredentialType.SESSION:
                                 logger.Debug($"Session-Cookie {credentials?.Key}={credentials?.Value}.");
                                 ConnectCookie = new Cookie(credentials?.Key, credentials?.Value)
@@ -231,13 +206,18 @@
                                 webSocket.Options.SetRequestHeader(keyName, keyValue);
                                 logger.Warn($"JWT is not supported - The SER connector resolve the bearer token!!!");
                                 break;
-                            case QlikCredentialType.HEADER:
-                                logger.Warn($"HEADER is not supported - Is too unsafe!!!");
-                                break;
                             case QlikCredentialType.CLOUD:
                                 logger.Debug($"Connecting to Qlik Cloud.");
                                 logger.Debug($"Cloud type: {credentials?.Key} - {credentials?.Value}.");
                                 webSocket.Options.SetRequestHeader(credentials?.Key, credentials?.Value);
+                                break;
+                            case QlikCredentialType.NEWSESSION:
+                                logger.Debug($"Connecting to Qlik with a new Session.");
+                                logger.Debug($"Session infos: {credentials?.Key} - {credentials?.Value}.");
+                                var jwtSession = new JwtSessionManager();
+                                var newSession = jwtSession.CreateNewSession(Config, new DomainUser(credentials?.Value), Config.App);
+                                ConnectCookie = newSession.Cookie;
+                                webSocket.Options.Cookies.Add(ConnectCookie);
                                 break;
                             case QlikCredentialType.NONE:
                                 // No Authentication for DESKTOP and DOCKER

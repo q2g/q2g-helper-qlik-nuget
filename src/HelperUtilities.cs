@@ -129,23 +129,24 @@
             }
         }
 
-        public static Tuple<Uri, string> NormalizeUri(string input)
+        public static string NormalizeUri(string input)
         {
             try
             {
-                var uri = new Uri(input);
-                return new Tuple<Uri, string>(uri, uri.Host);
+                logger.Debug($"Normalize Uri '{input}' to Qlik uri...");
+                var pathSegmentArray = input.Split('/');
+                if (pathSegmentArray.Length <= 1)
+                    return input;
+                for (int i = 1; i < pathSegmentArray.Length; i++)
+                    pathSegmentArray[i] = Uri.EscapeDataString(pathSegmentArray[i]);
+                var result = String.Join('/', pathSegmentArray);
+                logger.Debug($"New Uri is '{result}'.");
+                return result;
             }
-            catch
+            catch (Exception ex)
             {
-                logger.Info($"Read uri '{input}' in compatibility mode");
-                var tempUri = input.Replace("://", "://host/");
-                var uri = new Uri(tempUri);
-                var parts = input.Split(new char[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
-                var host = uri.OriginalString.Split('/').ElementAtOrDefault(3);
-                var segment = String.Join('/', parts.Skip(2)).TrimEnd('/');
-                var normalUri = new Uri($"{uri.Scheme}://host/{segment}");
-                return new Tuple<Uri, string>(normalUri, host);
+                logger.Error(ex, $"Normalize Uri '{input}' has an error.");
+                return null;
             }
         }
 

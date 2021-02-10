@@ -35,13 +35,21 @@
         {
             try
             {
+                logger.Debug("The server called ssl certificate validation...");
+
                 if (error == SslPolicyErrors.None)
+                {
+                    logger.Debug("No SSL policy errors.");
                     return true;
+                }
 
-                if (!Connection.SslVerify)
+                if (!Connection?.SslVerify ?? false)
+                {
+                    logger.Info("Use property 'SslVertify' with value 'false'.");
                     return true;
+                }
 
-                logger.Debug("Validate Server Certificate...");
+                logger.Debug("Validate server certificate...");
                 Uri requestUri = null;
                 if (sender is HttpRequestMessage hrm)
                     requestUri = hrm.RequestUri;
@@ -54,7 +62,7 @@
 
                 if (requestUri != null)
                 {
-                    logger.Debug("Validate Thumbprints...");
+                    logger.Debug("Validate thumbprints...");
                     var thumbprints = Connection?.SslValidThumbprints ?? new List<SerThumbprint>();
                     foreach (var item in thumbprints)
                     {
@@ -67,19 +75,24 @@
                             string certThumbprint = TrimHiddenChars(cert.GetCertHashString().ToLowerInvariant());
                             if ((thumbprint == certThumbprint)
                                 && ((uri == null) || (uri.Host.ToLowerInvariant() == requestUri.Host.ToLowerInvariant())))
+                            {
+                                logger.Debug("Thumbprint was successfully found.");
                                 return true;
+                            }
                         }
                         catch (Exception ex)
                         {
                             logger.Error(ex, "Thumbprint could not be validated.");
                         }
                     }
+
+                    logger.Debug("No correct thumbprint found.");
                 }
                 return false;
             }
             catch (Exception ex)
             {
-                logger.Error(ex, "The SSL-Validation was faild.");
+                logger.Error(ex, "The SSL validation was faild.");
                 return false;
             }
         }
