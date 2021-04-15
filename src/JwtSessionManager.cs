@@ -38,18 +38,9 @@
 
                 connectionHandler.ServerCertificateCustomValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
                 {
-                    var callback = ServicePointManager.ServerCertificateValidationCallback;
-                    if (callback != null)
-                    {
-                        var result = callback(sender, certificate, chain, sslPolicyErrors);
-                        if (result)
-                            return true;
-                        else
-                        {
-                            ConnectionFallbackHelper.CertificateFallbackValidation(connectUri, certificate);
-                            return false;
-                        }
-                    }
+                    if (ServerCertificateValidation.Validate(sender, certificate, sslPolicyErrors))
+                        return true;
+                    ServerCertificateValidation.ReadAlternativeDnsNames(connectUri, certificate);
                     return false;
                 };
 

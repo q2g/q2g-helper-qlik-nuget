@@ -12,7 +12,7 @@
     using Ser.Api.Model;
     #endregion
 
-    public static class ValidationCallback
+    public static class ServerCertificateValidation
     {
         #region Logger
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
@@ -20,6 +20,7 @@
 
         #region Properties
         public static SerConnection Connection { get; set; }
+        public static List<Uri> AlternativeUris { get; private set; }
         #endregion
 
         #region Private Methods
@@ -31,7 +32,7 @@
         #endregion
 
         #region Public Methods
-        public static bool ValidateRemoteCertificate(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors error)
+        public static bool Validate(object sender, X509Certificate2 cert, SslPolicyErrors error)
         {
             try
             {
@@ -94,6 +95,42 @@
             {
                 logger.Error(ex, "The SSL validation was faild.");
                 return false;
+            }
+        }
+
+        public static void ReadAlternativeDnsNames(Uri serverUri, X509Certificate2 cert)
+        {
+            try
+            {
+                if (AlternativeUris != null)
+                    return;
+
+                AlternativeUris = new List<Uri>();
+                var dnsNames = new List<string>();
+                var cnName = cert.Subject?.Split(',')?.FirstOrDefault()?.Replace("CN=", "");
+                if (cnName != null)
+                    dnsNames.Add(cnName);
+                var bytehosts = cert?.Extensions["2.5.29.17"] ?? null;
+                if (bytehosts != null)
+                {
+                    var names = bytehosts.Format(false)?.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var name in names)
+                        dnsNames.Add(name.Replace("DNS-Name=", "").Trim());
+                }
+
+                foreach (var dnsName in dnsNames)
+                {
+                    var uriBuilder = new UriBuilder(serverUri)
+                    {
+                        Host = dnsName
+                    };
+                    AlternativeUris.Add(uriBuilder.Uri);
+                }
+                AlternativeUris = AlternativeUris?.Distinct()?.ToList() ?? new List<Uri>();
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex, "The alternative dns names could´t not read.");
             }
         }
         #endregion
