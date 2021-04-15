@@ -14,10 +14,8 @@
     using Qlik.EngineAPI;
     using ImpromptuInterface;
     using Ser.Api;
-    using System.IO;
     using System.Security.Cryptography.X509Certificates;
-    using System.Text;
-    using Q2g.HelperPem;
+    using Ser.Api.Model;
     #endregion
 
     #region Enumeration

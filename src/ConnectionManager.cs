@@ -8,7 +8,7 @@
     using Newtonsoft.Json;
     using System.Threading;
     using System.Collections.Concurrent;
-    using Ser.Api;
+    using Ser.Api.Model;
     #endregion
 
     public class ConnectionManager

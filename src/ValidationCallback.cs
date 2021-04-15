@@ -2,7 +2,6 @@
 {
     #region Usings
     using NLog;
-    using Ser.Api;
     using System;
     using System.Collections.Generic;
     using System.Net;
@@ -10,6 +9,7 @@
     using System.Net.Security;
     using System.Security.Cryptography.X509Certificates;
     using System.Linq;
+    using Ser.Api.Model;
     #endregion
 
     public static class ValidationCallback
