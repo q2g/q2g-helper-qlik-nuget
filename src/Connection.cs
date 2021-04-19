@@ -46,7 +46,7 @@
         public IDoc CurrentApp { get; private set; }
         public QlikAppMode Mode { get; private set; }
         public bool IsFree { get; set; } = false;
-        public string Identity { get; set; } = null;
+        public string Identity { get; set; }
         public string ConnId { get; set; } = Guid.NewGuid().ToString();
         public static List<DocListEntry> PossibleApps { get; private set; } = new List<DocListEntry>();
 
@@ -72,8 +72,10 @@
 
             if (identity == null)
             {
-                connectUrl = $"{connectUrl}/identity/{Guid.NewGuid()}";
+                var newIdentity = Guid.NewGuid();
+                connectUrl = $"{connectUrl}/identity/{newIdentity}";
                 IsSharedSession = false;
+                Identity = newIdentity.ToString();
             }
             else if (!String.IsNullOrEmpty(identity))
             {
