@@ -8,14 +8,11 @@
     <Company>akquinet finance &amp; controlling GmbH</Company>
     <Copyright>Copyright (c) $([System.DateTime]::Today.ToString('yyyy'))</Copyright>
     <Product>Q2gHelperQlik</Product>
-    <Version>$(GitVersion_InformationalVersion)</Version>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <AssemblyVersion>5.1.2.0</AssemblyVersion>
+    <FileVersion>5.1.2.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GitVersionTask" Version="5.5.1" PrivateAssets="All" />
     <PackageReference Include="ImpromptuInterface" Version="7.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="NLog" Version="4.7.9" />
@@ -55,9 +52,12 @@
       </ItemGroup>
     </Otherwise>
   </Choose>
-  
-  <Target Name="GitVersion" BeforeTargets="AfterBuild">
-    <Message Importance="High" Text="++++++ GitVersion: $(GitVersion_InformationalVersion) ++++++" />
+
+  <Target Name="ShowAssemblyVersion" BeforeTargets="AfterBuild">
+    <GetAssemblyIdentity AssemblyFiles="$(TargetPath)">
+      <Output TaskParameter="Assemblies" ItemName="MyAssemblyIdentities" />
+    </GetAssemblyIdentity>
+    <Message Importance="High" Text="++++++ AssemblyVersion: %(MyAssemblyIdentities.Version) ++++++" />
   </Target>
 
 </Project>
