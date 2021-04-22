@@ -47,6 +47,7 @@
         public QlikAppMode Mode { get; private set; }
         public bool IsFree { get; set; } = false;
         public string Identity { get; set; }
+        public string GlobelIdentity { get; set; }
         public string ConnId { get; set; } = Guid.NewGuid().ToString();
         public static List<DocListEntry> PossibleApps { get; private set; } = new List<DocListEntry>();
 
@@ -75,11 +76,12 @@
                 var newIdentity = Guid.NewGuid();
                 connectUrl = $"{connectUrl}/identity/{newIdentity}";
                 IsSharedSession = false;
-                Identity = newIdentity.ToString();
+                GlobelIdentity = newIdentity.ToString();
             }
             else if (!String.IsNullOrEmpty(identity))
             {
                 connectUrl = $"{connectUrl}/identity/{identity}";
+                GlobelIdentity = identity;
             }
 
             ConnectUri = new Uri(connectUrl);
