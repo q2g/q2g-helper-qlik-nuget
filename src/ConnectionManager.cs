@@ -94,7 +94,7 @@
         {
             try
             {
-                logger.Debug("Make connections free.");
+                logger.Debug("Make all connections free.");
                 var activeConnections = Connections.Values.ToArray();
                 foreach (var connection in activeConnections)
                 {
@@ -104,7 +104,7 @@
                     }
                     catch (Exception ex)
                     {
-                        logger.Error(ex, $"The connection {connection?.ConnId} could not close.");
+                        logger.Error(ex, $"The connection '{connection?.ConnId}' could not close.");
                     }
                 }
                 Connections.Clear();

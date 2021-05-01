@@ -281,7 +281,7 @@
             }
             catch (Exception ex)
             {
-                logger.Error(ex, $"The connection to Qlik Sense with uri \"{ConnectUri}\" app \"{Config.App}\" could not be established.");
+                logger.Error(ex, $"The connection to Qlik Sense with uri '{ConnectUri}' app '{Config.App}' could not be established.");
                 return false;
             }
         }
@@ -296,13 +296,13 @@
                     {
                         SocketSession.CloseAsync().Wait(100);
                         SocketSession = null;
-                        logger.Debug($"The connection {ConnId} - Uri {ConnectUri?.AbsoluteUri} will be released.");
+                        logger.Debug($"The connection '{ConnId}' - Uri '{ConnectUri?.AbsoluteUri}' will be released.");
                     }
                 }
             }
             catch (Exception ex)
             {
-                logger.Error(ex, $"The connection {ConnId} - Uri {ConnectUri?.AbsoluteUri} could not release.");
+                logger.Error(ex, $"The connection '{ConnId}' - Uri '{ConnectUri?.AbsoluteUri}' could not release.");
             }
         }
         #endregion
