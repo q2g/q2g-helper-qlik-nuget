@@ -221,7 +221,7 @@
                             var newConnection = new Connection(null, connectionConfig);
                             if (Connect(newConnection))
                             {
-                                logger.Debug($"Connection count {Connections.Count}.");
+                                logger.Debug($"Create new socket connection - max count {Connections.Count}.");
                                 return newConnection;
                             }
                             else
