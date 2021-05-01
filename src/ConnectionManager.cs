@@ -20,12 +20,13 @@
         #region Variables && Properties
         private ConcurrentDictionary<string, Connection> Connections = new ConcurrentDictionary<string, Connection>();
         private readonly object threadObject = new object();
+        private static readonly object threadStaticObject = new object();
         private int emergencyConnectionCount = 0;
         private bool canConnect = true;
         #endregion
 
         #region Private Methods
-        public Connection FindConnection(SerConnection config)
+        private Connection FindConnection(SerConnection config)
         {
             try
             {
@@ -139,24 +140,27 @@
         {
             try
             {
-                var distinctIdentities = connectionConfig?.Identities?.Distinct()?.ToArray() ?? new string[0];
-                foreach (var identity in distinctIdentities)
+                lock (threadStaticObject)
                 {
-                    var newConnection = new Connection(identity, connectionConfig);
-                    if (newConnection.Connect(loadPossibleApps))
+                    var distinctIdentities = connectionConfig?.Identities?.Distinct()?.ToArray() ?? new string[0];
+                    foreach (var identity in distinctIdentities)
                     {
-                        newConnection.IsFree = false;
-                        return newConnection;
+                        var newConnection = new Connection(identity, connectionConfig);
+                        if (newConnection.Connect(loadPossibleApps))
+                        {
+                            newConnection.IsFree = false;
+                            return newConnection;
+                        }
                     }
-                }
 
-                if (connectionConfig.Identities == null || connectionConfig.Identities.Count == 0)
-                {
-                    var conn = new Connection(null, connectionConfig);
-                    if (conn.Connect(loadPossibleApps))
-                        return conn;
+                    if (connectionConfig.Identities == null || connectionConfig.Identities.Count == 0)
+                    {
+                        var conn = new Connection(null, connectionConfig);
+                        if (conn.Connect(loadPossibleApps))
+                            return conn;
+                    }
+                    return null;
                 }
-                return null;
             }
             catch (Exception ex)
             {
