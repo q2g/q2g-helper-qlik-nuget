@@ -18,40 +18,20 @@
     <PackageReference Include="NLog" Version="4.7.9" />
   </ItemGroup>
 
-  <Choose>
-    <When Condition="'$(Configuration)' == 'Release'">
-      <ItemGroup>
-        <Reference Include="enigma.net">
-          <HintPath>..\..\..\QlikAPIs\enigma.net\src\bin\Release\$(TargetFramework)\enigma.net.dll</HintPath>
-        </Reference>
-        <Reference Include="qlik-engineapi">
-          <HintPath>..\..\..\QlikAPIs\qlik-engineapi\src\qlik-engineapi\bin\Release\$(TargetFramework)\qlik-engineapi.dll</HintPath>
-        </Reference>
-        <Reference Include="Q2gHelperPem">
-          <HintPath>..\..\q2g-helper-pem\src\bin\Release\$(TargetFramework)\Q2gHelperPem.dll</HintPath>
-        </Reference>
-        <Reference Include="Ser.Api">
-          <HintPath>..\..\ser-api\src\bin\Release\$(TargetFramework)\SerApi.dll</HintPath>
-        </Reference>
-      </ItemGroup>
-    </When>
-    <Otherwise>
-      <ItemGroup>
-        <Reference Include="enigma.net">
-          <HintPath>..\..\..\QlikAPIs\enigma.net\src\bin\Debug\$(TargetFramework)\enigma.net.dll</HintPath>
-        </Reference>
-        <Reference Include="qlik-engineapi">
-          <HintPath>..\..\..\QlikAPIs\qlik-engineapi\src\qlik-engineapi\bin\Debug\$(TargetFramework)\qlik-engineapi.dll</HintPath>
-        </Reference>
-        <Reference Include="Q2gHelperPem">
-          <HintPath>..\..\q2g-helper-pem\src\bin\Debug\$(TargetFramework)\Q2gHelperPem.dll</HintPath>
-        </Reference>
-        <Reference Include="Ser.Api">
-          <HintPath>..\..\ser-api\src\bin\Debug\$(TargetFramework)\SerApi.dll</HintPath>
-        </Reference>
-      </ItemGroup>
-    </Otherwise>
-  </Choose>
+  <ItemGroup>
+    <Reference Include="enigma.net">
+      <HintPath>..\..\..\QlikAPIs\enigma.net\src\bin\$(Configuration)\$(TargetFramework)\enigma.net.dll</HintPath>
+    </Reference>
+    <Reference Include="qlik-engineapi">
+      <HintPath>..\..\..\QlikAPIs\qlik-engineapi\src\qlik-engineapi\bin\$(Configuration)\$(TargetFramework)\qlik-engineapi.dll</HintPath>
+    </Reference>
+    <Reference Include="Q2gHelperPem">
+      <HintPath>..\..\q2g-helper-pem\src\bin\$(Configuration)\$(TargetFramework)\Q2gHelperPem.dll</HintPath>
+    </Reference>
+    <Reference Include="Ser.Api">
+      <HintPath>..\..\ser-api\src\bin\$(Configuration)\$(TargetFramework)\SerApi.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 
   <Target Name="ShowAssemblyVersion" BeforeTargets="AfterBuild">
     <GetAssemblyIdentity AssemblyFiles="$(TargetPath)">
