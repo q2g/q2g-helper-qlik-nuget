@@ -14,10 +14,8 @@
     using Qlik.EngineAPI;
     using ImpromptuInterface;
     using Ser.Api;
-    using System.IO;
     using System.Security.Cryptography.X509Certificates;
-    using System.Text;
-    using Q2g.HelperPem;
+    using Ser.Api.Model;
     #endregion
 
     #region Enumeration
@@ -48,7 +46,8 @@
         public IDoc CurrentApp { get; private set; }
         public QlikAppMode Mode { get; private set; }
         public bool IsFree { get; set; } = false;
-        public string Identity { get; set; } = null;
+        public string Identity { get; set; }
+        public string GlobelIdentity { get; set; }
         public string ConnId { get; set; } = Guid.NewGuid().ToString();
         public static List<DocListEntry> PossibleApps { get; private set; } = new List<DocListEntry>();
 
@@ -74,12 +73,15 @@
 
             if (identity == null)
             {
-                connectUrl = $"{connectUrl}/identity/{Guid.NewGuid()}";
+                var newIdentity = Guid.NewGuid();
+                connectUrl = $"{connectUrl}/identity/{newIdentity}";
                 IsSharedSession = false;
+                GlobelIdentity = newIdentity.ToString();
             }
             else if (!String.IsNullOrEmpty(identity))
             {
                 connectUrl = $"{connectUrl}/identity/{identity}";
+                GlobelIdentity = identity;
             }
 
             ConnectUri = new Uri(connectUrl);
@@ -279,7 +281,7 @@
             }
             catch (Exception ex)
             {
-                logger.Error(ex, $"The connection to Qlik Sense with uri \"{ConnectUri}\" app \"{Config.App}\" could not be established.");
+                logger.Error(ex, $"The connection to Qlik Sense with uri '{ConnectUri}' app '{Config.App}' could not be established.");
                 return false;
             }
         }
@@ -294,13 +296,13 @@
                     {
                         SocketSession.CloseAsync().Wait(100);
                         SocketSession = null;
-                        logger.Debug($"The connection {ConnId} - Uri {ConnectUri?.AbsoluteUri} will be released.");
+                        logger.Debug($"The connection '{ConnId}' - Uri '{ConnectUri?.AbsoluteUri}' will be released.");
                     }
                 }
             }
             catch (Exception ex)
             {
-                logger.Error(ex, $"The connection {ConnId} - Uri {ConnectUri?.AbsoluteUri} could not release.");
+                logger.Error(ex, $"The connection '{ConnId}' - Uri '{ConnectUri?.AbsoluteUri}' could not release.");
             }
         }
         #endregion

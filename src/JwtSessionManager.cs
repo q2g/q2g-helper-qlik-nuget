@@ -2,7 +2,6 @@
 {
     #region Usings
     using System;
-    using System.Collections.Generic;
     using System.Linq;
     using System.Net;
     using System.Net.Http;
@@ -10,8 +9,8 @@
     using System.Security.Cryptography.X509Certificates;
     using NLog;
     using Q2g.HelperPem;
-    using Q2g.HelperQlik;
     using Ser.Api;
+    using Ser.Api.Model;
     #endregion
 
     public class JwtSessionManager
@@ -39,18 +38,9 @@
 
                 connectionHandler.ServerCertificateCustomValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
                 {
-                    var callback = ServicePointManager.ServerCertificateValidationCallback;
-                    if (callback != null)
-                    {
-                        var result = callback(sender, certificate, chain, sslPolicyErrors);
-                        if (result)
-                            return true;
-                        else
-                        {
-                            ConnectionFallbackHelper.CertificateFallbackValidation(connectUri, certificate);
-                            return false;
-                        }
-                    }
+                    if (ServerCertificateValidation.Validate(sender, certificate, sslPolicyErrors))
+                        return true;
+                    ServerCertificateValidation.ReadAlternativeDnsNames(connectUri, certificate);
                     return false;
                 };
 
