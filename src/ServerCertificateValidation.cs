@@ -46,7 +46,7 @@
 
                 if (!Connection?.SslVerify ?? false)
                 {
-                    logger.Info("Use property 'SslVertify' with value 'false'.");
+                    logger.Info("Use property 'SslVerify' with value 'false'.");
                     return true;
                 }
 
