@@ -25,7 +25,7 @@
             try
             {
                 var newUri = new UriBuilder(connectUri);
-                newUri.Path += "/sense/app";
+                newUri.Path = $"{newUri.Path.Trim('/')}/sense/app";
                 logger.Debug($"ConnectUri: {connectUri}");
                 var fullConnectUri = newUri.Uri;
                 logger.Debug($"Connection to uri: {fullConnectUri}");
