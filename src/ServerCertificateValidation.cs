@@ -77,17 +77,17 @@
                             if ((thumbprint == certThumbprint)
                                 && ((uri == null) || (uri.Host.ToLowerInvariant() == requestUri.Host.ToLowerInvariant())))
                             {
-                                logger.Debug("Thumbprint was successfully found.");
+                                logger.Info("SSL thumbprint was successfully found...");
                                 return true;
                             }
                         }
                         catch (Exception ex)
                         {
-                            logger.Error(ex, "Thumbprint could not be validated.");
+                            logger.Error(ex, "SSL thumbprint could not be validated.");
                         }
                     }
 
-                    logger.Debug("No correct thumbprint found.");
+                    logger.Warn("No correct ssl thumbprint found...");
                 }
                 return false;
             }
