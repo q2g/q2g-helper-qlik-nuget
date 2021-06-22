@@ -19,8 +19,8 @@
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
         #endregion
 
-        #region Private Methods
-        private Cookie GetJWTSession(Uri connectUri, string token, string cookieName = "X-Qlik-Session")
+        #region Public Methods
+        public Cookie GetJWTSession(Uri connectUri, string token, string cookieName = "X-Qlik-Session")
         {
             try
             {
@@ -60,9 +60,7 @@
                 return null;
             }
         }
-        #endregion
 
-        #region Public Methods
         public string GetToken(DomainUser domainUser, SerConnection connection, TimeSpan untilValid)
         {
             try

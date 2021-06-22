@@ -188,6 +188,7 @@
                         var credentials = Config?.Credentials ?? null;
                         var credType = Config?.Credentials?.Type ?? QlikCredentialType.NONE;
                         logger.Debug($"Connection type is '{credType}'");
+                        var jwtSession = new JwtSessionManager();
                         switch (credType)
                         {
                             case QlikCredentialType.SESSION:
@@ -203,10 +204,9 @@
                                 break;
                             case QlikCredentialType.JWT:
                                 logger.Debug($"Jwt type: {credentials?.Key} - {credentials?.Value}.");
-                                var keyName = credentials?.Key ?? "Authorization";
-                                var keyValue = credentials?.Value ?? null;
-                                webSocket.Options.SetRequestHeader(keyName, keyValue);
-                                logger.Warn($"JWT is not supported - The SER connector resolve the bearer token!!!");
+                                var newCookie = jwtSession.GetJWTSession(Config.ServerUri, credentials?.Value.Replace("Bearer ", ""), "X-Qlik-Session-ser");
+                                ConnectCookie = newCookie;
+                                webSocket.Options.Cookies.Add(ConnectCookie);
                                 break;
                             case QlikCredentialType.CLOUD:
                                 logger.Debug($"Connecting to Qlik Cloud.");
@@ -216,7 +216,6 @@
                             case QlikCredentialType.NEWSESSION:
                                 logger.Debug($"Connecting to Qlik with a new Session.");
                                 logger.Debug($"Session infos: {credentials?.Key} - {credentials?.Value}.");
-                                var jwtSession = new JwtSessionManager();
                                 var newSession = jwtSession.CreateNewSession(Config, new DomainUser(credentials?.Value), Config.App);
                                 ConnectCookie = newSession.Cookie;
                                 webSocket.Options.Cookies.Add(ConnectCookie);
