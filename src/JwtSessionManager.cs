@@ -19,13 +19,13 @@
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
         #endregion
 
-        #region Private Methods
-        private Cookie GetJWTSession(Uri connectUri, string token, string cookieName = "X-Qlik-Session")
+        #region Public Methods
+        public Cookie GetJWTSession(Uri connectUri, string token, string cookieName = "X-Qlik-Session")
         {
             try
             {
                 var newUri = new UriBuilder(connectUri);
-                newUri.Path += "/sense/app";
+                newUri.Path = $"{newUri.Path.Trim('/')}/sense/app";
                 logger.Debug($"ConnectUri: {connectUri}");
                 var fullConnectUri = newUri.Uri;
                 logger.Debug($"Connection to uri: {fullConnectUri}");
@@ -60,9 +60,7 @@
                 return null;
             }
         }
-        #endregion
 
-        #region Public Methods
         public string GetToken(DomainUser domainUser, SerConnection connection, TimeSpan untilValid)
         {
             try
