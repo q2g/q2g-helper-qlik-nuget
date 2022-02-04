@@ -8,22 +8,22 @@
     <Company>akquinet finance &amp; controlling GmbH</Company>
     <Copyright>Copyright (c) $([System.DateTime]::Today.ToString('yyyy'))</Copyright>
     <Product>Q2gHelperQlik</Product>
-    <AssemblyVersion>5.1.8.0</AssemblyVersion>
-    <FileVersion>5.1.8.0</FileVersion>
+    <AssemblyVersion>5.2.1.0</AssemblyVersion>
+    <FileVersion>5.2.1.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="ImpromptuInterface" Version="7.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="NLog" Version="4.7.12" />
+    <PackageReference Include="NLog" Version="4.7.13" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="enigma.net">
-      <HintPath>..\..\..\QlikAPIs\enigma.net\src\bin\$(Configuration)\$(TargetFramework)\enigma.net.dll</HintPath>
+      <HintPath>..\..\..\..\QlikAPIs\enigma.net\src\bin\$(Configuration)\$(TargetFramework)\enigma.net.dll</HintPath>
     </Reference>
     <Reference Include="qlik-engineapi">
-      <HintPath>..\..\..\QlikAPIs\qlik-engineapi\src\qlik-engineapi\bin\$(Configuration)\$(TargetFramework)\qlik-engineapi.dll</HintPath>
+      <HintPath>..\..\..\..\QlikAPIs\qlik-engineapi\src\qlik-engineapi\bin\$(Configuration)\$(TargetFramework)\qlik-engineapi.dll</HintPath>
     </Reference>
     <Reference Include="Q2gHelperPem">
       <HintPath>..\..\q2g-helper-pem\src\bin\$(Configuration)\$(TargetFramework)\Q2gHelperPem.dll</HintPath>
